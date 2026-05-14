@@ -1,0 +1,125 @@
+// src/features/auth/view/LoginView.tsx
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
+import { Card } from '@/components/ui/Card';
+import { Logo } from '@/components/ui/Logo';
+import { authService } from '../service/auth.service';
+import { useAuthStore } from '@/store/authStore';
+
+/**
+ * Componente responsável pela interface de autenticação.
+ * Gerencia a entrada de credenciais e a persistência da sessão global.
+ */
+export function LoginView() {
+  // Estados locais para controle dos campos do formulário
+  const [username, setUsername] = useState('');
+  const [senha, setSenha] = useState('');
+  
+  // Estados de controle de interface (UI Feedback)
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const navigate = useNavigate();
+  
+  // Hook do Zustand para persistir os dados do perfil após o login
+  const loginApp = useAuthStore((state) => state.login);
+
+  /**
+   * Processa a tentativa de autenticação junto ao serviço de auth.
+   */
+  const handleLogin = async () => {
+    // Validação básica de obrigatoriedade
+    if (!username || !senha) {
+      setErrorMsg('Por favor, preencha todos os campos.');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setErrorMsg('');
+      
+      const response = await authService.login({ username, senha });
+      
+      // Validação do retorno positivo do servidor
+      if (response.sucesso && response.perfil) {
+        /**
+         * Persistência Global: Armazena o perfil no estado gerenciado pelo Zustand.
+         * Isso permite que o dashboard e outros hooks acessem os dados do usuário.
+         */
+        loginApp(response.perfil); 
+        navigate('/dashboard'); 
+      } else {
+        setErrorMsg(response.erro || 'Erro ao realizar login.');
+      }
+
+    } catch (error: any) {
+      // Tratamento de erros de rede ou mensagens customizadas do backend
+      const mensagemBackend = error.response?.data?.erro || 'Não foi possível conectar ao servidor.';
+      setErrorMsg(mensagemBackend);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="w-full flex flex-col items-center">
+      {/* Branding e Identidade Visual */}
+      <header className="mb-8 flex flex-col items-center text-center">
+        <Logo size="lg" />
+        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.4em] mt-3">
+          Grandmaster Analysis Engine
+        </p>
+      </header>
+
+      <Card>
+        <h2 className="text-xl md:text-2xl font-bold mb-6 text-white text-center">
+          Acesso ao Sistema
+        </h2>
+        
+        {/* Feedback visual de erro com animação de alerta */}
+        {errorMsg && (
+          <div className="mb-4 p-3 bg-red-900/50 border border-red-500 rounded text-red-200 text-sm text-center animate-shake">
+            {errorMsg}
+          </div>
+        )}
+
+        {/* Formulário de entrada de dados */}
+        <div className="flex flex-col gap-4 mb-8">
+          <Input 
+            label="Nome de Usuário" 
+            value={username} 
+            onChange={setUsername} 
+            placeholder="Seu usuário (ex: thayna_dev)"
+          />
+          <Input 
+            label="Senha" 
+            type="password" 
+            value={senha} 
+            onChange={setSenha}
+            placeholder="Sua senha secreta"
+          />
+        </div>
+
+        <div className="flex flex-col gap-3">
+          <Button 
+            label={isLoading ? 'Autenticando...' : 'Entrar'} 
+            onClick={handleLogin} 
+          />
+        </div>
+
+        {/* Navegação alternativa para novos usuários */}
+        <div className="mt-6 text-center text-sm text-slate-400">
+          Ainda não tem conta?{' '}
+          <Link 
+            to="/register" 
+            className="text-analysis-blue hover:text-blue-400 font-semibold transition-colors"
+          >
+            Cadastre-se aqui
+          </Link>
+        </div>
+      </Card>
+    </div>
+  );
+}

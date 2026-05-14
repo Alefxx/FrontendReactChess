@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@theme {
+  /*cores personalizadas */
+  --color-chess-green: #88c425;
+  --color-analysis-blue: #38bdf8;
+  --color-bg-main: #1f2937;       
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-bg-main);
+  color: white;
+  font-family: 'Inter', system-ui, sans-serif;
+}
