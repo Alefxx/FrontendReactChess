@@ -1,8 +1,9 @@
-// src/features/dashboard/DashboardView.tsx
+// src/features/dashboard/view/DashboardView.tsx
 import { useNavigate } from 'react-router-dom';
 import { Logo } from '@/components/ui/Logo';
 import { Button } from '@/components/ui/Button';
 import { UserProfileWidget } from '@/components/ui/UserProfileWidget';
+import { useAuthStore } from '@/store/authStore';
 
 /**
  * DashboardView: Ponto central da aplicação após o login.
@@ -11,14 +12,16 @@ import { UserProfileWidget } from '@/components/ui/UserProfileWidget';
 export function DashboardView() {
   const navigate = useNavigate();
 
-  /** 
-   * Mock de dados: Substituir pela integração com Zustand/Store global 
-   * assim que o gerenciamento de estado for implementado.
+  // Consome os dados reais do usuário logado na memória global (Zustand)
+  const user = useAuthStore((state) => state.user);
+
+  /**
+   * Função utilitária para extrair as iniciais do nome.
+   * Usada como fallback visual caso o usuário ainda não tenha foto.
    */
-  const mockUser = {
-    nome: "Thayná",
-    rating: 1500,
-    iniciais: "TH"
+  const getIniciais = (nome?: string) => {
+    if (!nome) return '??';
+    return nome.substring(0, 2).toUpperCase();
   };
 
   return (
@@ -28,10 +31,12 @@ export function DashboardView() {
       <header className="flex justify-between items-center w-full mb-16">
         <Logo size="sm" />
         
+        {/* Widget dinâmico: agora renderiza os dados reais que vieram do banco */}
         <UserProfileWidget 
-          nome={mockUser.nome}
-          rating={mockUser.rating}
-          iniciais={mockUser.iniciais}
+          nome={user?.nome || 'Jogador'}
+          rating={user?.rating || 1500}
+          iniciais={getIniciais(user?.nome)}
+          foto={user?.foto} // Certifique-se de que o Widget saiba exibir a prop 'foto'
           onClick={() => navigate('/profile')}
         />
       </header>

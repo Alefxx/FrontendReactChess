@@ -5,9 +5,8 @@ import { DashboardView } from '@/features/dashboard/view/DashBoardView';
 import { BotView } from '@/features/botselection/view/BotView';
 import { TimeView } from '@/features/timeselection/view/TimeView';
 import { MatchView } from '@/features/match/view/MatchView'; 
+import { ProfileView } from '@/features/profile/ProfileView'; 
 
-
-const ProfileView = () => <div className="text-white text-center mt-20">Tela de Perfil em construção...</div>;
 
 const router = createBrowserRouter([
   {
