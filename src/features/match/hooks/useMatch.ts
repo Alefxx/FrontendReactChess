@@ -1,4 +1,5 @@
 // src/features/match/hooks/useMatch.ts
+import { useCallback } from 'react';
 import { matchService } from '@/features/match/service/match.service';
 import { Bot } from '@/features/botselection/service/bot.service';
 
@@ -7,46 +8,66 @@ import { useClockMatch } from './useClockMatch';
 import { useGameRulesMatch } from './useGameRulesMatch';
 import { useBidHistoryMatch } from './useBidHistoryMatch';
 import { useStockfishMatch } from './useStockfishMatch';
+import { useAnalysis } from '@/features/stockfish/analysis/hooks/useAnalysis'; 
+import { useMoveClassification } from '@/features/stockfish/classificationmoves/hooks/useMoveClassification';
+import { useMatchAnalysisMemory } from './useMatchAnalysisMemory'; 
 
 /**
  * Hook Orquestrador: Coordena a comunicação entre sub-hooks e o backend.
  */
-export function useMatch(partidaData: any, currentUser: any, botOponente?: Bot) {
+export function useMatch(partidaData: any, currentUser: any, botOponente?: Bot, isEvalBarEnabled: boolean = false) {
   
-  // Inicialização dos sub-hooks especializados
   const board = useBoardStateMatch(partidaData, currentUser);
   const clock = useClockMatch(partidaData);
   const rules = useGameRulesMatch();
   const history = useBidHistoryMatch();
 
-  /**
-   * Distribui a resposta autoritária do servidor para todos os sub-hooks.
-   */
-  const processarRespostaServidor = (response: any) => {
+  // Delegação do armazenamento e processamento de estatísticas para o hook especializado
+  const memory = useMatchAnalysisMemory({
+    partidaId: partidaData?.partidaId,
+    fenInicial: partidaData?.fen,
+    minhaCor: board.minhaCor
+  });
+
+  // ATUALIZAÇÃO: Nova assinatura do useAnalysis interceptando a abertura
+  const { evalData, currentOpening } = useAnalysis(board.gameFen, isEvalBarEnabled);
+  const vantagemBrancas = evalData?.vantagemBrancas || 0;
+  const isMate = evalData?.tipo === 'mate';
+
+  // ATUALIZAÇÃO: Fila consumindo o histórico em array (memory.fenHistory) em vez do FEN isolado da tela
+  const { 
+    progressoFila, 
+    iniciarAvaliacaoFimDeJogo, 
+    pararAvaliacao 
+  } = useMoveClassification(memory.fenHistory, isEvalBarEnabled, memory.registrarAvaliacaoLocal);
+
+  const processarRespostaServidor = (response: any, moveRealizado?: { origem: string; destino: string }) => {
     clock.atualizarTempos(response.tempos);
     board.setGameFen(response.fen);
     history.atualizarHistorico(response.pgn);
     rules.atualizarRegras(response.statusPartida, response.detalhes);
+
+    // Delega o salvamento do histórico visual para o hook de memória
+    memory.registrarQuadroHistorico(response.fen, moveRealizado);
+
+    if (moveRealizado) {
+      board.setLastMove(moveRealizado);
+    }
   };
 
-  // Instancia a lógica do bot passando os estados necessários para reação
   useStockfishMatch({
-    partidaId: partidaData.partidaId,
+    partidaId: partidaData?.partidaId,
     gameFen: board.gameFen,
     isMinhaVez: board.isMinhaVez,
     minhaCor: board.minhaCor,
     isGameOver: !!rules.gameOver,
     isPendingPromotion: !!rules.pendingPromotion,
     botOponente,
-    onBotMoveSuccess: (response) => processarRespostaServidor(response)
+    onBotMoveSuccess: (response, moveRealizado) => processarRespostaServidor(response, moveRealizado)
   });
 
-  /**
-   * Lógica principal de movimentação para o jogador humano.
-   */
   const realizarMovimento = async (origem: string, destino: string, pecaPromocao?: string) => {
     try {
-      // Limpa seleções visuais antes de processar
       board.setPieceSquare('');
       board.setMoveSquares({});
 
@@ -56,22 +77,17 @@ export function useMatch(partidaData: any, currentUser: any, botOponente?: Bot) 
       const response = await matchService.executarMovimento(partidaData.partidaId, payload);
 
       if (response.sucesso) {
-        // Caso o servidor identifique uma promoção necessária antes de concluir o lance
         if (response.requerPromocao) {
            rules.setPendingPromotion({ origem, destino });
-           return false; // Retorna false para impedir que a peça "estilingue" visualmente no tabuleiro
+           return false; 
         }
 
         if (response.fen) {
-            // Se for a conclusão de uma promoção, limpa o estado de trava do modal
             if (pecaPromocao) rules.setPendingPromotion(null);
-            
-            processarRespostaServidor(response);
+            processarRespostaServidor(response, { origem, destino });
             return true; 
         }
       }
-
-      console.warn(`[JOGADOR] Movimento rejeitado pelo servidor.`);
       return false; 
     } catch (error) {
       console.error("[JOGADOR] Falha de comunicação no movimento:", error);
@@ -79,50 +95,46 @@ export function useMatch(partidaData: any, currentUser: any, botOponente?: Bot) 
     }
   };
 
-  /**
-   * Handler para evento de Drag and Drop.
-   */
   const onPieceDrop = async (sourceSquare: string, targetSquare: string) => {
     if (!board.isMinhaVez || rules.gameOver || rules.pendingPromotion) return false;
     return await realizarMovimento(sourceSquare, targetSquare);
   };
 
-  /**
-   * Handler para evento de clique em casas (seleção e destino).
-   */
   const onSquareClick = async (square: string) => {
     if (!board.isMinhaVez || rules.gameOver || rules.pendingPromotion) return;
 
-    // Cancela seleção se clicar na mesma casa
     if (board.pieceSquare === square) {
       board.setPieceSquare('');
       board.setMoveSquares({});
       return;
     }
 
-    // Tenta mover se houver uma peça selecionada e o clique for em um destino válido
     if (board.pieceSquare && board.moveSquares[square]) {
       await realizarMovimento(board.pieceSquare, square);
       return;
     }
 
-    // Busca lances válidos para a casa clicada
-    const movimentos = await matchService.obterMovimentos(partidaData.partidaId, square, board.minhaCor);
-    
-    if (movimentos && movimentos.length > 0) {
-      board.setPieceSquare(square);
+    try {
+      const movimentos = await matchService.obterMovimentos(partidaData.partidaId, square, board.minhaCor);
       
-      // Aplica destaques visuais para os movimentos possíveis
-      const novosEstilos: Record<string, any> = { [square]: { backgroundColor: 'rgba(255, 255, 0, 0.4)' } };
-      movimentos.forEach((mov: any) => {
-        const casaDestino = typeof mov === 'string' ? mov : (mov.destino || mov.casa || mov);
-        novosEstilos[casaDestino] = {
-          background: 'radial-gradient(circle, rgba(136,196,37,0.5) 25%, transparent 25%)',
-          borderRadius: '50%'
-        };
-      });
-      board.setMoveSquares(novosEstilos);
-    } else {
+      if (movimentos && movimentos.length > 0) {
+        board.setPieceSquare(square);
+        
+        const novosEstilos: Record<string, any> = { [square]: { backgroundColor: 'rgba(255, 255, 0, 0.4)' } };
+        movimentos.forEach((mov: any) => {
+          const casaDestino = typeof mov === 'string' ? mov : (mov.destino || mov.casa || mov);
+          novosEstilos[casaDestino] = {
+            background: 'radial-gradient(circle, rgba(136,196,37,0.5) 25%, transparent 25%)',
+            borderRadius: '50%'
+          };
+        });
+        board.setMoveSquares(novosEstilos);
+      } else {
+        board.setPieceSquare('');
+        board.setMoveSquares({});
+      }
+    } catch (error) {
+      console.error("[JOGADOR] Erro ao buscar movimentos válidos para a peça selecionada.", error);
       board.setPieceSquare('');
       board.setMoveSquares({});
     }
@@ -132,6 +144,7 @@ export function useMatch(partidaData: any, currentUser: any, botOponente?: Bot) 
     gameFen: board.gameFen,
     minhaCor: board.minhaCor,
     moveSquares: board.moveSquares,
+    lastMove: board.lastMove, 
     moveHistory: history.moveHistory,
     isCheck: rules.isCheck,
     gameOver: rules.gameOver,
@@ -139,8 +152,21 @@ export function useMatch(partidaData: any, currentUser: any, botOponente?: Bot) 
     setPendingPromotion: rules.setPendingPromotion,
     tempoBrancas: clock.tempoBrancas,
     tempoPretas: clock.tempoPretas,
+    
+    // ATUALIZAÇÃO: Variáveis atualizadas passadas para a UI
+    vantagemBrancas, 
+    isMate,
+    currentOpening,
+    progressoFila,
+    iniciarAvaliacaoFimDeJogo,
+    pararAvaliacao,          
     onPieceDrop,
     onSquareClick,
     realizarMovimento,
+    
+    avaliacoesLocais: memory.avaliacoesLocais, 
+    fenHistory: memory.fenHistory,
+    moveCoordsHistory: memory.moveCoordsHistory,
+    minhasEstatisticas: memory.minhasEstatisticas
   };
 }

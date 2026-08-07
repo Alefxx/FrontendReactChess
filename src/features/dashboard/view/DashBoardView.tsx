@@ -56,7 +56,7 @@ export function DashboardView() {
           <Button 
             label="JOGAR AGORA" 
             size="lg" 
-            onClick={() => navigate('/bots')} 
+            onClick={() => navigate('/gamemode')} 
           />
         </div>
       </main>

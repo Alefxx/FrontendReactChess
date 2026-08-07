@@ -17,18 +17,30 @@ export function useBoardStateMatch(partidaData: any, currentUser: any) {
   // Dicionário de estilos para destacar casas (ex: movimentos possíveis ou seleção)
   const [moveSquares, setMoveSquares] = useState<Record<string, any>>({}); 
 
+  // NOVO: Estado para armazenar a origem e destino do último lance válido
+  const [lastMove, setLastMove] = useState<{ origem: string; destino: string } | null>(null);
+  
+  // Identifica se a partida em andamento é do tipo presencial no mesmo aparelho
+  const isLocal = partidaData?.tipoPartida === 'local';
+
   // Lógica de Identidade: Normalização de nomes para comparação
   const brancasUser = partidaData?.jogadores?.brancas?.trim().toLowerCase();
   const logadoUser = currentUser?.username?.trim().toLowerCase();
   
-  // Define se o usuário logado está jogando de brancas ou pretas
-  const minhaCor = brancasUser === logadoUser ? 'branca' : 'preta';
-  
   // Extração do turno atual da string FEN ('w' para brancas, 'b' para pretas)
   const turnoAtualFEN = gameFen.split(' ')[1] || 'w'; 
   
-  // Validação: É a vez do jogador humano interagir com o tabuleiro?
-  const isMinhaVez = (minhaCor === 'branca' && turnoAtualFEN === 'w') || (minhaCor === 'preta' && turnoAtualFEN === 'b');
+  // ALTERAÇÃO: No modo local, a 'minhaCor' (cor que envia o comando pra API) alterna dinamicamente 
+  // conforme o turno FEN. No online/bot, ela continua cravada na conta do usuário logado.
+  const minhaCor = isLocal 
+    ? (turnoAtualFEN === 'w' ? 'branca' : 'preta') 
+    : (brancasUser === logadoUser ? 'branca' : 'preta');
+  
+  // ALTERAÇÃO: No modo local, a tela nunca bloqueia o drag'n'drop (pois os dois usam a tela).
+  // No modo online/bot, mantém a regra de travar quando for a vez do oponente.
+  const isMinhaVez = isLocal 
+    ? true 
+    : ((minhaCor === 'branca' && turnoAtualFEN === 'w') || (minhaCor === 'preta' && turnoAtualFEN === 'b'));
 
   return {
     gameFen,
@@ -37,6 +49,8 @@ export function useBoardStateMatch(partidaData: any, currentUser: any) {
     setPieceSquare,
     moveSquares,
     setMoveSquares,
+    lastMove,       
+    setLastMove,    
     minhaCor,
     isMinhaVez,
     turnoAtualFEN

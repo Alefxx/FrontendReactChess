@@ -24,20 +24,26 @@ export function useTime() {
   // ID ou Slug do tempo escolhido para a partida
   const [selectedTimeId, setSelectedTimeId] = useState<string | null>(null);
 
+  // NOVO: Estado para controlar a ativação da Barra de Avaliação (EvalBar)
+  const [isEvalBarEnabled, setIsEvalBarEnabled] = useState(false);
+
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Dados do usuário logado e do bot adversário recebido da tela anterior
   const currentUser = useAuthStore((state) => state.user);
+  
+  // ATUALIZAÇÃO: Extrai as variáveis de estado vindas tanto do BotView quanto do LocalView
   const botOponente = location.state?.bot; 
+  const tipoPartida = location.state?.tipoPartida || 'bot'; // Assume 'bot' como fallback
+  const guestName = location.state?.guestName || 'Visitante';
 
   /**
    * Busca as opções de controle de tempo no backend ao carregar a tela.
    */
   useEffect(() => {
-    // Redireciona se a tela for acessada diretamente sem um bot definido
-    if (!botOponente) {
-      navigate('/bots');
+    // ATUALIZAÇÃO: Redireciona para o dashboard apenas se não for nem bot nem local
+    if (!botOponente && tipoPartida !== 'local') {
+      navigate('/dashboard');
       return;
     }
 
@@ -54,14 +60,16 @@ export function useTime() {
     };
 
     fetchTempos();
-  }, [botOponente, navigate]);
+  }, [botOponente, tipoPartida, navigate]);
 
   /**
    * Dispara a criação da partida no backend.
    */
   const handleConfirmar = async () => {
-    // Verifica se todos os dados necessários estão presentes antes de tentar criar a partida
-    if (!selectedTimeId || !currentUser || !botOponente) return;
+    if (!selectedTimeId || !currentUser) return;
+    
+    // Trava de segurança: se for bot, o bot precisa existir no state
+    if (tipoPartida === 'bot' && !botOponente) return;
 
     try {
       setIsCreatingMatch(true);
@@ -75,25 +83,34 @@ export function useTime() {
         ? (Math.random() > 0.5 ? 'white' : 'black') 
         : selectedColor;
 
+      // ATUALIZAÇÃO: Define o nome do oponente dinamicamente com base no tipo da partida
+      const oponenteNome = tipoPartida === 'local' ? guestName : botOponente.nome;
+
       // Atribui os usernames baseado na cor definida
       if (corDefinitiva === 'white') {
         brancasUsername = currentUser.username;
-        pretasUsername = botOponente.nome; 
+        pretasUsername = oponenteNome; 
       } else {
-        brancasUsername = botOponente.nome;
+        brancasUsername = oponenteNome;
         pretasUsername = currentUser.username;
       }
 
-      // Requisição para criar a partida
+      // Requisição para criar a partida no backend usando a flag correta
       const respostaPartida = await matchService.criarPartida({
         brancasUsername,
         pretasUsername,
         tempoId: selectedTimeId,
-        tipoPartida: 'bot' 
+        tipoPartida: tipoPartida 
       });
 
-      // Redireciona para a tela da partida com os dados recebidos do backend
-      navigate('/match', { state: { partidaData: respostaPartida, botOponente } });
+      // ATUALIZAÇÃO: Roteamento usando diretamente a resposta da API (que agora contém o tipoPartida)
+      // Como back e front falam a mesma língua, não precisamos recriar o objeto.
+      // NOVO: Repassamos a flag isEvalBarEnabled pelo state do Router
+      if (respostaPartida.tipoPartida === 'local') {
+        navigate('/matchlocal', { state: { partidaData: respostaPartida, isEvalBarEnabled } });
+      } else {
+        navigate('/match', { state: { partidaData: respostaPartida, botOponente, isEvalBarEnabled } });
+      }
 
     } catch (error: any) {
       console.error(error);
@@ -113,6 +130,10 @@ export function useTime() {
     selectedTimeId,
     setSelectedTimeId,
     botOponente,
+    tipoPartida, // Exportado para uso na View
+    guestName,   // Exportado para uso na View
+    isEvalBarEnabled, // NOVO: Exportado para a View
+    setIsEvalBarEnabled, // NOVO: Exportado para a View
     handleConfirmar,
     navigate
   };

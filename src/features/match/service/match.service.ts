@@ -2,52 +2,37 @@
 import { apiClient } from '@/api/apiClient';
 import { AxiosError } from 'axios';
 
-/**
- * Dados necessários para a inicialização de um novo confronto.
- */
 export interface CreateMatchPayload {
   brancasUsername: string;
   pretasUsername: string;
   tempoId: string;
-  tipoPartida: 'bot' | 'multiplayer';
+  tipoPartida: 'bot' | 'multiplayer' | 'local';
 }
 
-/**
- * Estrutura de retorno após a criação bem-sucedida de uma partida.
- * Contém o estado inicial do tabuleiro e identificadores dos jogadores.
- */
 export interface MatchResponse {
   sucesso: boolean;
   partidaId: string;
+  tipoPartida: 'bot' | 'multiplayer' | 'local';
   jogadores: { 
     brancas: string; 
     pretas: string; 
   };
   controleTempo: any | null;
-  fen: string; // Representação textual da posição das peças
+  fen: string; 
   tabuleiro: Record<string, any>;
-  erro?: string;
 }
 
-/**
- * Parâmetros para submissão de uma jogada ao servidor.
- */
 export interface MovePayload {
-  origem: string;  // Ex: 'e2'
-  destino: string; // Ex: 'e4'
+  origem: string;  
+  destino: string; 
   corDoTurnoAtual: 'branca' | 'preta';
   historicoCapturas?: string[];
-  promocao?: string; // Peça escolhida em caso de promoção (ex: 'q', 'r', 'b', 'n')
+  promocao?: string; 
 }
 
-/**
- * Resposta detalhada do processamento de um lance.
- * Gerencia tanto movimentos comuns quanto estados de interrupção para promoção.
- */
 export interface MoveResponse {
   sucesso: boolean;
-  erro?: string;
-  requerPromocao?: boolean; // Flag que indica a necessidade de escolha de peça pelo usuário
+  requerPromocao?: boolean; 
   mensagem?: string;
   detalhes?: {
     captura?: string;
@@ -70,9 +55,6 @@ export interface MoveResponse {
   };
 }
 
-/**
- * Resposta autoritativa do servidor para sincronização dos relógios locais.
- */
 export interface SyncClockResponse {
   sucesso: boolean;
   tempos: {
@@ -81,89 +63,78 @@ export interface SyncClockResponse {
     fimNoTempo: boolean;
     vencedorPorTempo: 'branca' | 'preta' | null;
   };
-  erro?: string;
 }
+
+export interface AvaliacaoPayload {
+  codigo: number; 
+}
+
+/**
+ * Função utilitária privada para padronizar a extração e o lançamento de erros da API.
+ */
+const handleApiError = (err: unknown, defaultMessage: string): never => {
+  const error = err as AxiosError<{ erro?: string }>;
+  const errorMessage = error.response?.data?.erro || defaultMessage;
+  throw new Error(errorMessage);
+};
 
 /**
  * Serviço responsável pela orquestração das chamadas de API referentes à partida.
  */
 export const matchService = {
   
-  /**
-   * Solicita a criação de uma nova instância de partida no banco de dados.
-   */
   criarPartida: async (dados: CreateMatchPayload): Promise<MatchResponse> => {
     try {
       const response = await apiClient.post<MatchResponse>('/partida/nova', dados);
       return response.data;
     } catch (err) {
-      const error = err as AxiosError<{erro: string}>;
-      return { 
-        sucesso: false, 
-        partidaId: '',
-        jogadores: { brancas: '', pretas: '' },
-        controleTempo: null,
-        fen: '',
-        tabuleiro: {},
-        erro: error.response?.data?.erro || "Falha ao iniciar partida." 
-      };
+      handleApiError(err, "Falha ao iniciar partida.");
     }
   },
 
-  /**
-   * Envia um lance para validação e execução no motor de regras do backend.
-   * Lida com lances parciais (que requerem promoção) e lances finais.
-   */
   executarMovimento: async (partidaId: string, dados: MovePayload): Promise<MoveResponse> => {
     try {
       const response = await apiClient.post<MoveResponse>(`/partida/${partidaId}/mover`, dados);
       return response.data;
     } catch (err) {
-      const error = err as AxiosError<{erro: string}>;
-      console.error("Erro na jogada:", error);
-      return { 
-        sucesso: false, 
-        erro: error.response?.data?.erro || "Movimento inválido ou erro de servidor." 
-      };
+      handleApiError(err, "Movimento inválido ou erro de servidor.");
     }
   },
 
-  /**
-   * Recupera o estado atual da partida (jogadores, tabuleiro e tempos).
-   * Essencial para processos de reconexão ou atualização de página (F5).
-   */
+  registrarAvaliacao: async (partidaId: string, dados: AvaliacaoPayload): Promise<boolean> => {
+    try {
+      await apiClient.post(`/partida/${partidaId}/avaliacao`, dados);
+      return true;
+    } catch (err) {
+      // Como é assíncrono e background, retornamos o erro formatado para o hook decidir se ignora ou avisa
+      handleApiError(err, "Erro ao registrar avaliação do lance.");
+    }
+  },
+
   obterEstadoPartida: async (partidaId: string) => {
     try {
       const response = await apiClient.get(`/partida/${partidaId}/estado`);
       return response.data;
     } catch (err) {
-      console.error("Erro ao buscar estado da partida");
-      return null;
+      handleApiError(err, "Erro ao buscar estado da partida.");
     }
   },
 
-  /**
-   * Consulta os destinos legais para uma peça específica a partir de uma casa de origem.
-   */
   obterMovimentos: async (partidaId: string, origem: string, cor: string): Promise<string[]> => {
     try {
       const response = await apiClient.get(`/partida/${partidaId}/movimentos/${origem}?cor=${cor}`);
       return response.data.podeIrPara || [];
-    } catch (error) {
-      return [];
+    } catch (err) {
+      handleApiError(err, "Erro ao consultar movimentos válidos.");
     }
   },
 
-  /**
-   * Obtém a verdade absoluta do relógio gerida pelo servidor (CPU).
-   */
-  sincronizarRelogio: async (partidaId: string): Promise<SyncClockResponse | null> => {
+  sincronizarRelogio: async (partidaId: string): Promise<SyncClockResponse> => {
     try {
       const response = await apiClient.get<SyncClockResponse>(`/partida/${partidaId}/relogio`);
       return response.data;
-    } catch (error) {
-      console.error("Erro ao sincronizar relógio:", error);
-      return null;
+    } catch (err) {
+      handleApiError(err, "Erro ao sincronizar relógio.");
     }
   }
 };

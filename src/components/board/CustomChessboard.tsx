@@ -54,6 +54,7 @@ export function CustomChessboard({
           const colIndex = colNames.indexOf(col);
           const rowIndex = 8 - row;
           const isDark = (colIndex + rowIndex) % 2 !== 0;
+          
           const highlightStyle = customSquareStyles[square] || {};
 
           return (

@@ -1,6 +1,6 @@
 // src/features/match/hooks/useStockfishMatch.ts
 import { useState, useEffect } from 'react';
-import { engineService } from '@/features/bot/service/engine.service';
+import { engineService } from '@/features/stockfish/bot/service/engine.service';
 import { matchService } from '@/features/match/service/match.service';
 import { Bot } from '@/features/botselection/service/bot.service';
 
@@ -12,7 +12,9 @@ interface UseStockfishProps {
   isGameOver: boolean;
   isPendingPromotion: boolean;
   botOponente?: Bot;
-  onBotMoveSuccess: (response: any) => void; 
+  
+  // ATUALIZADO: Adicionamos o moveRealizado para repassar a origem e destino da jogada
+  onBotMoveSuccess: (response: any, moveRealizado: { origem: string, destino: string }) => void; 
 }
 
 /**
@@ -48,6 +50,12 @@ export function useStockfishMatch({
         setIsBotThinking(true); 
         
         try {
+          // =========================================================
+          // DELAY ADICIONADO: Aguarda 1 segundo antes de processar
+          // Simula o tempo de "raciocínio" para não ser instantâneo
+          // =========================================================
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
           const config = botOponente.configStockfish;
           // Solicita o melhor lance para o motor Stockfish
           const bestMove = await engineService.getBestMove(gameFen, config.depth, config.skillLevel); 
@@ -68,7 +76,8 @@ export function useStockfishMatch({
             const response = await matchService.executarMovimento(partidaId, payloadBot);
 
             if (response.sucesso && response.fen) {
-              onBotMoveSuccess(response);
+              // ATUALIZADO: Envia a origem e destino extraídos do lance do bot (bestMove)
+              onBotMoveSuccess(response, { origem, destino });
             }
           }
         } catch (error) {

@@ -1,5 +1,5 @@
 // src/features/timeselection/view/TimeView.tsx
-import { ArrowLeft, Clock } from 'lucide-react';
+import { ArrowLeft, Clock, Activity } from 'lucide-react'; // NOVO: Importamos Activity
 import { IconButton } from '@/components/ui/IconButton';
 import { Button } from '@/components/ui/Button';
 import { ColorSelector } from '@/components/ui/ColorSelector';
@@ -20,6 +20,10 @@ export function TimeView() {
     selectedTimeId,
     setSelectedTimeId,
     botOponente,
+    tipoPartida,
+    guestName,
+    isEvalBarEnabled, // NOVO: Trazendo o estado do hook
+    setIsEvalBarEnabled, // NOVO: Trazendo o setter do hook
     handleConfirmar,
     navigate
   } = useTime();
@@ -40,7 +44,9 @@ export function TimeView() {
             Configurar <span className="text-chess-green">Partida</span>
           </h2>
           <p className="text-slate-400 text-sm md:text-base">
-            Contra: <span className="text-analysis-blue font-bold">{botOponente?.nome}</span>
+            Contra: <span className="text-analysis-blue font-bold">
+              {tipoPartida === 'local' ? guestName : botOponente?.nome}
+            </span>
           </p>
         </div>
       </div>
@@ -60,7 +66,7 @@ export function TimeView() {
         </section>
 
         {/* Componente para seleção do controle de tempo */}
-        <section className="flex-1 flex flex-col">
+        <section className="flex flex-col">
           <h3 className="text-slate-400 font-semibold mb-4 text-center uppercase tracking-widest text-sm flex items-center justify-center gap-2">
             <Clock size={16} />
             Controle de Tempo
@@ -89,6 +95,31 @@ export function TimeView() {
           )}
         </section>
 
+        {/* NOVO: Componente de configuração da Barra de Avaliação (Toggle) */}
+        {!isLoading && !errorMsg && (
+          <section className="flex justify-center mt-2">
+            <div 
+              onClick={() => setIsEvalBarEnabled(!isEvalBarEnabled)}
+              className="flex items-center justify-between w-full max-w-md p-4 bg-slate-800/50 rounded-xl border border-slate-700/50 cursor-pointer hover:bg-slate-800 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-lg ${isEvalBarEnabled ? 'bg-analysis-blue/20 text-analysis-blue' : 'bg-slate-700 text-slate-400'}`}>
+                  <Activity size={20} />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-white font-medium">Barra de Avaliação</span>
+                  <span className="text-xs text-slate-400">Mostra a vantagem do motor em tempo real</span>
+                </div>
+              </div>
+              
+              {/* Switch Visual */}
+              <div className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 ${isEvalBarEnabled ? 'bg-analysis-blue' : 'bg-slate-600'}`}>
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${isEvalBarEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+              </div>
+            </div>
+          </section>
+        )}
+
       </div>
 
       {/* Exibe mensagem de erro caso falhe a criação da partida após clicar em 'COMEÇAR JOGO' */}
@@ -100,7 +131,7 @@ export function TimeView() {
 
       {/* Botão para iniciar a partida */}
       {!isLoading && (
-        <div className="flex justify-center mt-10">
+        <div className="flex justify-center mt-8">
           <Button 
             label={isCreatingMatch ? 'GERANDO TABULEIRO...' : 'COMEÇAR JOGO'} 
             size="lg" 
