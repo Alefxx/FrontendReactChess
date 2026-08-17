@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom'; // CORREÇÃO: Removido o useMatch daqui
 import { PlayerPanel } from '@/components/board/PlayerPanel';
 import { MatchBoardArea } from '@/components/board/MatchBoardArea';
 import { MoveHistoryBoard } from '@/components/board/MoveHistoryBoard';
@@ -109,12 +109,13 @@ export function MatchView() {
         <MoveHistoryBoard 
           pgnHistory={matchState.moveHistory} 
           onProporEmpate={() => console.log('Empate solicitado')}
-          onAbandonar={() => navigate('/dashboard')}
+          
+          // CORREÇÃO: Agora chama a função que passa pelo backend, atualiza Elo e abre o Modal!
+          onAbandonar={matchState.abandonarPartida} 
         />
         
         {isEvalBarEnabled && (
           <div className="bg-slate-900/50 rounded-xl border border-slate-800 p-4 flex flex-col items-center justify-center text-center gap-2">
-            {/* ATUALIZAÇÃO: Exibe o nome da Abertura ao Vivo na lateral */}
             {matchState.currentOpening && (
               <span className="text-stone-400 font-bold uppercase tracking-wider text-[11px] pb-2 border-b border-slate-700/50 w-full">
                 {matchState.currentOpening.name}
@@ -133,3 +134,4 @@ export function MatchView() {
     </div>
   );
 }
+

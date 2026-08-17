@@ -71,7 +71,8 @@ export function useMatch(partidaData: any, currentUser: any, botOponente?: Bot, 
       board.setPieceSquare('');
       board.setMoveSquares({});
 
-      const payload: any = { origem, destino, corDoTurnoAtual: board.minhaCor };
+      // ATUALIZAÇÃO: Não enviamos mais a corDoTurnoAtual (Segurança do Backend garantida)
+      const payload: any = { origem, destino };
       if (pecaPromocao) payload.promocao = pecaPromocao;
 
       const response = await matchService.executarMovimento(partidaData.partidaId, payload);
@@ -140,6 +141,20 @@ export function useMatch(partidaData: any, currentUser: any, botOponente?: Bot, 
     }
   };
 
+  // NOVO: Função para o jogador desistir da partida atual
+  const abandonarPartida = async () => {
+    try {
+      const response = await matchService.desistirPartida(partidaData.partidaId, board.minhaCor);
+      
+      // Se sucesso, passa o novo status (fimDeJogo = true, motivo = abandono) pro GameRules
+      if (response.sucesso && response.statusPartida) {
+        rules.atualizarRegras(response.statusPartida);
+      }
+    } catch (error) {
+      console.error("[JOGADOR] Erro ao desistir:", error);
+    }
+  };
+
   return {
     gameFen: board.gameFen,
     minhaCor: board.minhaCor,
@@ -153,7 +168,7 @@ export function useMatch(partidaData: any, currentUser: any, botOponente?: Bot, 
     tempoBrancas: clock.tempoBrancas,
     tempoPretas: clock.tempoPretas,
     
-    // ATUALIZAÇÃO: Variáveis atualizadas passadas para a UI
+    // Variáveis passadas para a UI
     vantagemBrancas, 
     isMate,
     currentOpening,
@@ -163,6 +178,7 @@ export function useMatch(partidaData: any, currentUser: any, botOponente?: Bot, 
     onPieceDrop,
     onSquareClick,
     realizarMovimento,
+    abandonarPartida, // <-- Função exposta para a View
     
     avaliacoesLocais: memory.avaliacoesLocais, 
     fenHistory: memory.fenHistory,

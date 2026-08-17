@@ -25,7 +25,7 @@ export interface MatchResponse {
 export interface MovePayload {
   origem: string;  
   destino: string; 
-  corDoTurnoAtual: 'branca' | 'preta';
+  corDoTurnoAtual?: 'branca' | 'preta'; // Tornamos opcional pois o Backend não usa mais por segurança
   historicoCapturas?: string[];
   promocao?: string; 
 }
@@ -106,7 +106,6 @@ export const matchService = {
       await apiClient.post(`/partida/${partidaId}/avaliacao`, dados);
       return true;
     } catch (err) {
-      // Como é assíncrono e background, retornamos o erro formatado para o hook decidir se ignora ou avisa
       handleApiError(err, "Erro ao registrar avaliação do lance.");
     }
   },
@@ -135,6 +134,16 @@ export const matchService = {
       return response.data;
     } catch (err) {
       handleApiError(err, "Erro ao sincronizar relógio.");
+    }
+  },
+
+  // NOVO: Serviço de Desistência
+  desistirPartida: async (partidaId: string, corQueDesistiu: string): Promise<MoveResponse> => {
+    try {
+      const response = await apiClient.post<MoveResponse>(`/partida/${partidaId}/desistir`, { corQueDesistiu });
+      return response.data;
+    } catch (err) {
+      handleApiError(err, "Erro ao tentar desistir da partida.");
     }
   }
 };
