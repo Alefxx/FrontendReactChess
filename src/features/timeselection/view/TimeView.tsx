@@ -1,17 +1,15 @@
 // src/features/timeselection/view/TimeView.tsx
-import { ArrowLeft, Clock, Activity } from 'lucide-react'; // NOVO: Importamos Activity
+import { ArrowLeft, Clock, Activity, Play } from 'lucide-react';
 import { IconButton } from '@/components/ui/IconButton';
 import { Button } from '@/components/ui/Button';
 import { ColorSelector } from '@/components/ui/ColorSelector';
-import { TimeCard } from '@/components/ui/TimeCard';
+import { FeatureToggle } from '@/components/ui/FeatureToggle';
+import { TimeGroup } from '@/components/ui/TimeGroup';
 import { useTime } from '../hooks/useTime'; 
 
-/**
- * Componente que exibe a tela de configuração de partida, permitindo a seleção de cor e controle de tempo.
- */
 export function TimeView() {
   const {
-    tempos,
+    groupedTempos, // Pegamos o array já agrupado direto do Hook
     isLoading,
     isCreatingMatch,
     errorMsg,
@@ -22,125 +20,101 @@ export function TimeView() {
     botOponente,
     tipoPartida,
     guestName,
-    isEvalBarEnabled, // NOVO: Trazendo o estado do hook
-    setIsEvalBarEnabled, // NOVO: Trazendo o setter do hook
+    isEvalBarEnabled,
+    setIsEvalBarEnabled,
     handleConfirmar,
     navigate
   } = useTime();
 
-  const isMultiplayer = false; 
-
   return (
-    <div className="w-full max-w-4xl mx-auto flex flex-col pt-4 pb-12 min-h-[85vh]">
+    <div className="relative w-full min-h-screen flex flex-col bg-slate-950 px-4 sm:px-8 pt-6 pb-12 overflow-hidden">
       
-      {/* Cabeçalho da página com botão de voltar e informações do adversário */}
-      <div className="flex items-center gap-4 mb-8">
-        <IconButton 
-          icon={<ArrowLeft size={24} />} 
-          onClick={() => navigate(-1)} 
-        />
-        <div>
-          <h2 className="text-2xl md:text-3xl font-black text-white leading-tight">
-            Configurar <span className="text-chess-green">Partida</span>
-          </h2>
-          <p className="text-slate-400 text-sm md:text-base">
-            Contra: <span className="text-analysis-blue font-bold">
-              {tipoPartida === 'local' ? guestName : botOponente?.nome}
-            </span>
-          </p>
-        </div>
-      </div>
+      {/* Background Glows */}
+      <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-chess-green/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-analysis-blue/5 rounded-full blur-[120px] pointer-events-none" />
 
-      <div className="flex-1 flex flex-col gap-10">
+      <div className="relative z-10 w-full max-w-2xl mx-auto flex flex-col flex-1 h-full pb-24">
         
-        {/* Componente para seleção da cor das peças */}
-        <section>
-          <h3 className="text-slate-400 font-semibold mb-4 text-center uppercase tracking-widest text-sm">
-            Com qual cor você joga?
-          </h3>
-          <ColorSelector 
-            selected={selectedColor} 
-            onSelect={setSelectedColor} 
-            isMultiplayer={isMultiplayer} 
-          />
-        </section>
+        {/* Cabeçalho */}
+        <header className="flex items-center gap-4 mb-10">
+          <IconButton icon={<ArrowLeft size={24} />} aria-label="Voltar" onClick={() => navigate(-1)} />
+          <div>
+            <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight">
+              Configurar <span className="text-transparent bg-clip-text bg-gradient-to-r from-chess-green to-[#b5f233]">Partida</span>
+            </h1>
+            <p className="text-slate-400 text-sm mt-1">
+              Contra: <span className="text-white font-bold bg-slate-800 px-2 py-0.5 rounded ml-1">
+                {tipoPartida === 'local' ? guestName : botOponente?.nome}
+              </span>
+            </p>
+          </div>
+        </header>
 
-        {/* Componente para seleção do controle de tempo */}
-        <section className="flex flex-col">
-          <h3 className="text-slate-400 font-semibold mb-4 text-center uppercase tracking-widest text-sm flex items-center justify-center gap-2">
-            <Clock size={16} />
-            Controle de Tempo
-          </h3>
-
-          {/* Exibe o estado de carregamento, erro ou a grade de opções de tempo */}
-          {isLoading ? (
-            <div className="text-center text-slate-500 py-10 animate-pulse">Carregando relógios...</div>
-          ) : errorMsg ? (
-            <div className="p-4 bg-red-900/50 border border-red-500 rounded text-red-200 text-center">{errorMsg}</div>
-          ) : (
-            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {tempos.map((tempo) => {
-                const identificador = tempo.slug || tempo._id || tempo.id || '';
-                
-                return (
-                  <TimeCard 
-                    key={identificador} 
-                    time={tempo} 
-                    isSelected={selectedTimeId === identificador}
-                    onClick={() => setSelectedTimeId(identificador)}
-                  />
-                );
-              })}
-            </div>
-          )}
-        </section>
-
-        {/* NOVO: Componente de configuração da Barra de Avaliação (Toggle) */}
-        {!isLoading && !errorMsg && (
-          <section className="flex justify-center mt-2">
-            <div 
-              onClick={() => setIsEvalBarEnabled(!isEvalBarEnabled)}
-              className="flex items-center justify-between w-full max-w-md p-4 bg-slate-800/50 rounded-xl border border-slate-700/50 cursor-pointer hover:bg-slate-800 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${isEvalBarEnabled ? 'bg-analysis-blue/20 text-analysis-blue' : 'bg-slate-700 text-slate-400'}`}>
-                  <Activity size={20} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-white font-medium">Barra de Avaliação</span>
-                  <span className="text-xs text-slate-400">Mostra a vantagem do motor em tempo real</span>
-                </div>
-              </div>
-              
-              {/* Switch Visual */}
-              <div className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 ${isEvalBarEnabled ? 'bg-analysis-blue' : 'bg-slate-600'}`}>
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${isEvalBarEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-              </div>
-            </div>
+        <main className="flex-1 flex flex-col gap-10">
+          
+          {/* Seção: Cor */}
+          <section className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <h3 className="text-slate-400 font-bold mb-4 text-center uppercase tracking-widest text-xs">Com qual cor você joga?</h3>
+            <ColorSelector selected={selectedColor} onSelect={setSelectedColor} isMultiplayer={false} />
           </section>
+
+          {/* Seção: Tempo */}
+          <section className="flex flex-col animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150 fill-mode-both">
+            <h3 className="text-slate-400 font-bold mb-4 text-center uppercase tracking-widest text-xs flex items-center justify-center gap-2">
+              <Clock size={16} /> Controles de Tempo
+            </h3>
+
+            {isLoading ? (
+              <div className="flex flex-col gap-3">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="h-[120px] bg-slate-900/40 rounded-2xl border border-slate-800/60 animate-pulse" />
+                ))}
+              </div>
+            ) : errorMsg ? (
+              <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-center font-medium">{errorMsg}</div>
+            ) : (
+              <div className="flex flex-col">
+                {groupedTempos.map(group => (
+                  <TimeGroup 
+                    key={group.base} 
+                    base={group.base} 
+                    list={group.list} 
+                    selectedTimeId={selectedTimeId}
+                    onSelect={setSelectedTimeId}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Seção: Barra de Avaliação (Usando o Componente Refatorado) */}
+          {!isLoading && !errorMsg && (
+            <section className="flex justify-center mt-2 animate-in fade-in slide-in-from-bottom-8 duration-700 delay-300 fill-mode-both w-full">
+              <FeatureToggle
+                title="Barra de Avaliação"
+                description="Vantagem do motor ao vivo"
+                icon={<Activity size={22} />}
+                isActive={isEvalBarEnabled}
+                onToggle={() => setIsEvalBarEnabled(!isEvalBarEnabled)}
+              />
+            </section>
+          )}
+        </main>
+
+        {/* Rodapé Fixo */}
+        {!isLoading && !errorMsg && (
+          <div className="fixed bottom-0 left-0 w-full p-6 bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent flex justify-center z-20">
+            <Button 
+              label={isCreatingMatch ? 'GERANDO TABULEIRO...' : 'COMEÇAR JOGO'} 
+              size="lg" 
+              icon={!isCreatingMatch && <Play size={20} className="fill-current" />}
+              className="w-full max-w-md shadow-xl"
+              disabled={!selectedTimeId || isCreatingMatch}
+              onClick={handleConfirmar}
+            />
+          </div>
         )}
-
       </div>
-
-      {/* Exibe mensagem de erro caso falhe a criação da partida após clicar em 'COMEÇAR JOGO' */}
-      {errorMsg && !isLoading && (
-        <div className="mb-4 p-3 bg-red-900/50 border border-red-500 rounded text-red-200 text-sm text-center">
-          {errorMsg}
-        </div>
-      )}
-
-      {/* Botão para iniciar a partida */}
-      {!isLoading && (
-        <div className="flex justify-center mt-8">
-          <Button 
-            label={isCreatingMatch ? 'GERANDO TABULEIRO...' : 'COMEÇAR JOGO'} 
-            size="lg" 
-            variant={selectedTimeId ? 'primary' : 'secondary'}
-            onClick={handleConfirmar}
-          />
-        </div>
-      )}
-
     </div>
   );
 }

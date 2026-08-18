@@ -1,40 +1,48 @@
 import React from 'react';
 
-interface ButtonProps {
-  label: string;
-  onClick?: () => void; 
-  variant?: 'primary' | 'secondary' | 'danger';
+// Estendemos ButtonHTMLAttributes para aceitar disabled, type="submit", etc.
+interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  label?: string;
+  variant?: 'primary' | 'secondary' | 'danger' | 'outline';
   size?: 'sm' | 'md' | 'lg';
-  className?: string; 
+  icon?: React.ReactNode; 
 }
 
 export function Button({ 
   label, 
-  onClick, 
   variant = 'primary', 
   size = 'md',
-  className = ''
+  icon,
+  className = '',
+  disabled,
+  ...props 
 }: ButtonProps) {
   
-  const bgColors = {
-    primary: 'bg-chess-green hover:brightness-110 text-slate-900',
-    secondary: 'bg-slate-700 hover:bg-slate-600 text-white',
-    danger: 'bg-red-600 hover:bg-red-500 text-white',
+  const baseStyles = "flex items-center justify-center gap-2 rounded-xl font-bold transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chess-green focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 shadow-md";
+
+  const variants = {
+    primary: 'bg-chess-green hover:bg-[#a3d92b] text-slate-900 shadow-chess-green/20 hover:shadow-chess-green/40',
+    secondary: 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 hover:border-slate-600',
+    danger: 'bg-red-500 hover:bg-red-400 text-white shadow-red-500/20',
+    outline: 'bg-transparent border-2 border-slate-700 text-slate-300 hover:text-white hover:border-slate-500',
   };
 
   const sizes = {
-    sm: 'px-3 py-1 text-sm',
-    md: 'px-6 py-2 text-base',
-    lg: 'px-10 py-4 text-xl',
+    sm: 'px-4 py-2 text-sm',
+    md: 'px-6 py-3 text-base',
+    lg: 'px-8 py-4 text-lg',
   };
 
   return (
     <button
-      onClick={onClick}
-
-      className={`${bgColors[variant]} ${sizes[size]} ${className} rounded-md font-bold transition-all active:scale-95 shadow-md`}
+      disabled={disabled}
+      // CORREÇÃO: Espaços adicionados entre as variáveis
+      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
+      {...props}
     >
-      {label}
+      {icon && <span className="shrink-0">{icon}</span>}
+      {label && <span>{label}</span>}
+      {props.children}
     </button>
   );
 }
