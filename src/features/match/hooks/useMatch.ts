@@ -29,12 +29,10 @@ export function useMatch(partidaData: any, currentUser: any, botOponente?: Bot, 
     minhaCor: board.minhaCor
   });
 
-  // CORREÇÃO: Puxamos as variáveis exatamente como o useAnalysis original as exporta
-  const { vantagemBrancas, isMate } = useAnalysis(board.gameFen, isEvalBarEnabled);
-  
-  // Como o useAnalysis original não devolve currentOpening, usamos null provisoriamente
-  // (Assim a tela não quebra e exibe "Abertura Desconhecida" no MatchView)
-  const currentOpening = null;
+  // ATUALIZAÇÃO: Nova assinatura do useAnalysis interceptando a abertura
+  const { evalData, currentOpening } = useAnalysis(board.gameFen, isEvalBarEnabled);
+  const vantagemBrancas = evalData?.vantagemBrancas || 0;
+  const isMate = evalData?.tipo === 'mate';
 
   // ATUALIZAÇÃO: Fila consumindo o histórico em array (memory.fenHistory) em vez do FEN isolado da tela
   const { 

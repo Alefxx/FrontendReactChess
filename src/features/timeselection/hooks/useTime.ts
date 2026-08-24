@@ -1,5 +1,5 @@
 // src/features/timeselection/hooks/useTime.ts
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { timeService, TimeOption } from '@/features/timeselection/service/time.service';
 import { matchService } from '@/features/match/service/match.service';
@@ -120,35 +120,8 @@ export function useTime() {
     }
   };
 
-  /**
-   * Pega o array bruto de tempos da API e agrupa pelos minutos base.
-   * Ex: "1+0" e "1+1" caem no grupo "1".
-   */
-  const groupedTempos = useMemo(() => {
-    const groups = new Map<string, TimeOption[]>();
-
-    tempos.forEach((t) => {
-      // Captura o primeiro número da string (ex: de "10+5" pega "10")
-      const match = t.label.match(/\d+/);
-      const base = match ? match[0] : 'Outros';
-
-      if (!groups.has(base)) groups.set(base, []);
-      groups.get(base)!.push(t);
-    });
-
-    // Converte o Map para Array e ordena do menor tempo para o maior
-    return Array.from(groups.entries())
-      .map(([base, list]) => ({ base, list }))
-      .sort((a, b) => {
-        if (a.base === 'Outros') return 1;
-        if (b.base === 'Outros') return -1;
-        return Number(a.base) - Number(b.base);
-      });
-  }, [tempos]);
-
   return {
     tempos,
-    groupedTempos, // NOVO: Exportado para ser mapeado no TimeView
     isLoading,
     isCreatingMatch,
     errorMsg,
@@ -157,10 +130,10 @@ export function useTime() {
     selectedTimeId,
     setSelectedTimeId,
     botOponente,
-    tipoPartida, 
-    guestName,   
-    isEvalBarEnabled, 
-    setIsEvalBarEnabled, 
+    tipoPartida, // Exportado para uso na View
+    guestName,   // Exportado para uso na View
+    isEvalBarEnabled, // NOVO: Exportado para a View
+    setIsEvalBarEnabled, // NOVO: Exportado para a View
     handleConfirmar,
     navigate
   };

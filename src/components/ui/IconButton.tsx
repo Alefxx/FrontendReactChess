@@ -1,28 +1,19 @@
-import React from 'react';
-
-// Estendemos os atributos nativos e exigimos o aria-label para acessibilidade
-interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface IconButtonProps {
   icon: React.ReactNode;
-  'aria-label': string; 
-  variant?: 'ghost' | 'danger' | 'outline';
+  onClick: () => void;
+  variant?: 'ghost' | 'danger';
 }
 
-export function IconButton({ 
-  icon, 
-  variant = 'ghost', 
-  className = '',
-  ...props 
-}: IconButtonProps) {
+export function IconButton({ icon, onClick, variant = 'ghost' }: IconButtonProps) {
   const styles = {
-    ghost: 'hover:bg-slate-800 text-slate-400 hover:text-white',
-    danger: 'hover:bg-red-500/20 text-red-500 hover:text-red-400',
-    outline: 'border border-slate-700 text-slate-400 hover:bg-slate-800 hover:text-white',
+    ghost: 'hover:bg-slate-700 text-slate-400',
+    danger: 'hover:bg-red-900/30 text-red-500'
   };
 
   return (
     <button 
-      className={`p-2.5 rounded-full transition-all duration-200 flex items-center justify-center active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chess-green ${styles[variant]} ${className}`}
-      {...props}
+      onClick={onClick}
+      className={`p-2 rounded-full transition-colors flex items-center justify-center ${styles[variant]}`}
     >
       {icon}
     </button>

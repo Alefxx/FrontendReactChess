@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { Cpu, Bot as BotIcon } from 'lucide-react';
 import { Bot } from '@/features/botselection/service/bot.service';
+import { Cpu } from 'lucide-react'; // iconeIA
 
 interface BotCardProps {
   bot: Bot;
@@ -9,48 +8,48 @@ interface BotCardProps {
 }
 
 export function BotCard({ bot, isSelected, onClick }: BotCardProps) {
-  // Controle de estado para lidar com o erro de imagem do jeito React (sem injetar HTML no DOM)
-  const [imgError, setImgError] = useState(false);
-
   return (
-    <button 
+    <div 
       onClick={onClick}
       className={`
-        group relative w-full flex flex-col items-center p-5 rounded-2xl cursor-pointer transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chess-green
+        relative flex flex-col items-center p-4 rounded-xl cursor-pointer transition-all duration-300
         ${isSelected 
-          ? 'bg-gradient-to-b from-slate-800 to-slate-800/80 border-2 border-chess-green shadow-[0_0_20px_rgba(136,196,37,0.15)] -translate-y-2' 
-          : 'bg-slate-900 border-2 border-slate-800 hover:border-slate-600 hover:bg-slate-800'}
+          ? 'bg-slate-800 border-2 border-chess-green shadow-[0_0_15px_rgba(136,196,37,0.3)] scale-105' 
+          : 'bg-slate-900 border-2 border-slate-700 hover:border-slate-500 hover:bg-slate-800'}
       `}
     >
-      {/* Selo de Selecionado */}
-      <div className={`absolute -top-3.5 transition-all duration-300 ${isSelected ? 'opacity-100 scale-100' : 'opacity-0 scale-50 pointer-events-none'}`}>
-        <div className="bg-chess-green text-slate-900 text-[11px] font-black tracking-wider uppercase px-4 py-1 rounded-full shadow-lg">
-          Oponente
+      {/* Selo de Selecionado (Aparece apenas quando clicado) */}
+      {isSelected && (
+        <div className="absolute -top-3 bg-chess-green text-slate-900 text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-md z-10">
+          Adversário
         </div>
-      </div>
+      )}
 
       {/* Foto do Bot */}
-      <div className={`w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden mb-4 border-2 flex items-center justify-center shrink-0 transition-colors duration-300 ${isSelected ? 'border-chess-green bg-slate-800' : 'border-slate-700 bg-slate-800 group-hover:border-slate-500'}`}>
-        {!imgError && bot.foto ? (
-          <img 
-            src={bot.foto} 
-            alt={`Avatar do bot ${bot.nome}`} 
-            className="w-full h-full object-cover"
-            onError={() => setImgError(true)}
-          />
-        ) : (
-          <BotIcon size={40} className="text-slate-500" />
-        )}
+      <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden bg-slate-700 mb-4 border border-slate-600 flex items-center justify-center shrink-0">
+        {/* Como as fotos não existem ainda, mostramos o ícone ou o alt */}
+        <img 
+          src={bot.foto} 
+          alt={bot.nome} 
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            // Fallback caso a imagem '/img/bot_1.png' falhe ao carregar
+            e.currentTarget.style.display = 'none';
+            e.currentTarget.parentElement?.classList.add('flex', 'items-center', 'justify-center');
+            e.currentTarget.parentElement?.insertAdjacentHTML('beforeend', '<span class="text-slate-500">Bot</span>');
+          }}
+        />
       </div>
 
-      <h3 className={`font-bold text-lg text-center leading-tight mb-1.5 transition-colors ${isSelected ? 'text-white' : 'text-slate-200'}`}>
+      {}
+      <h3 className="text-white font-bold text-lg text-center leading-tight mb-1">
         {bot.nome}
       </h3>
       
-      <div className={`flex items-center gap-1.5 text-sm font-bold transition-colors ${isSelected ? 'text-[#b5f233]' : 'text-analysis-blue'}`}>
-        <Cpu size={14} strokeWidth={2.5} />
+      <div className="flex items-center gap-1 text-analysis-blue text-sm font-semibold">
+        <Cpu size={14} />
         <span>{bot.rating} ELO</span>
       </div>
-    </button>
+    </div>
   );
 }

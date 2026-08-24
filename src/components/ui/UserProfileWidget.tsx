@@ -10,31 +10,25 @@ interface UserProfileWidgetProps {
 
 export function UserProfileWidget({ nome, rating, iniciais, foto, onClick }: UserProfileWidgetProps) {
   return (
-    <button 
+    <div 
       onClick={onClick} 
-      className={`group flex items-center gap-3 p-1.5 pr-4 rounded-full border border-transparent transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-chess-green
-        ${onClick ? 'cursor-pointer hover:bg-slate-800/80 hover:border-slate-700 hover:shadow-lg' : ''}`}
+      className={`flex items-center gap-3 p-2 pr-4 rounded-full border transition-all
+        ${onClick ? 'cursor-pointer hover:bg-slate-800 border-transparent hover:border-slate-700' : 'border-transparent'}`}
     >
-      {/* Informações de Texto */}
-      <div className="text-right hidden sm:flex sm:flex-col sm:justify-center">
-        <p className="text-sm font-bold text-slate-100 leading-none group-hover:text-white transition-colors">
-          {nome}
-        </p>
-        <p className="text-[11px] text-analysis-blue font-bold tracking-widest mt-1 opacity-90">
-          {rating} ELO
-        </p>
+      {/* Informações de Texto (Escondidas em telas muito pequenas) */}
+      <div className="text-right hidden sm:block">
+        <p className="text-sm font-bold text-white leading-tight">{nome}</p>
+        <p className="text-xs text-analysis-blue font-bold tracking-wider">{rating} ELO</p>
       </div>
       
-      {/* Avatar */}
-      <div className="w-10 h-10 rounded-full bg-slate-800 border-2 border-chess-green flex items-center justify-center overflow-hidden shadow-inner shrink-0 group-hover:scale-105 transition-transform duration-300">
+      {/* Círculo do Avatar */}
+      <div className="w-10 h-10 rounded-full bg-slate-700 border-2 border-chess-green flex items-center justify-center overflow-hidden shadow-lg shrink-0">
         {foto ? (
-          <img src={foto} alt={`Foto de ${nome}`} className="w-full h-full object-cover" />
+          <img src={foto} alt={nome} className="w-full h-full object-cover" />
         ) : (
-          <span className="text-slate-300 font-bold text-sm tracking-tighter">
-            {iniciais}
-          </span>
+          <span className="text-slate-300 font-bold text-sm">{iniciais}</span>
         )}
       </div>
-    </button>
+    </div>
   );
 }
