@@ -85,6 +85,7 @@ export function GameLocal() {
           isMate={matchState.isMate}
           gameOver={matchState.gameOver}
           progressoFila={matchState.progressoFila}
+          erroAnalise={matchState.erroAnalise}
           minhasEstatisticas={matchState.minhasEstatisticas}
           iniciarAvaliacaoFimDeJogo={matchState.iniciarAvaliacaoFimDeJogo}
           pararAvaliacao={matchState.pararAvaliacao}

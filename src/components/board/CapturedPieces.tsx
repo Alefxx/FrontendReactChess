@@ -1,4 +1,3 @@
-import React from 'react';
 import { pieceImages } from '../pieces/ChessPiece';
 
 interface CapturedPiecesProps {

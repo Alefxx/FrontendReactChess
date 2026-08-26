@@ -6,7 +6,6 @@
  */
 export class EngineService {
   private worker: Worker | null = null;
-  private isReady = false;
   private isThinking = false; // NOVO: Trava de concorrência
 
   constructor() {
@@ -23,7 +22,6 @@ export class EngineService {
       
       this.worker.onmessage = (event) => {
         if (event.data === 'uciok') {
-          this.isReady = true;
           this.worker?.postMessage('isready');
         }
       };

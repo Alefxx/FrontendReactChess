@@ -1,5 +1,4 @@
 
-import React from 'react';
 
 // Componentes da interface
 import { UserProfileWidget } from '@/components/ui/UserProfileWidget';

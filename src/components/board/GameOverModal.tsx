@@ -1,5 +1,5 @@
 // src/components/board/GameOverModal.tsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Trophy, Frown, Minus, Activity, Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
@@ -11,6 +11,7 @@ interface GameOverModalProps {
   motivo: string;
   minhaCor: 'branca' | 'preta';
   progressoFila?: { avaliados: number; total: number };
+  erroAnalise?: string | null;
   stats?: MoveStats;
   onAvaliar?: () => void;
   onVerNoTabuleiro: () => void;
@@ -22,6 +23,7 @@ export function GameOverModal({
   motivo, 
   minhaCor, 
   progressoFila, 
+  erroAnalise,
   stats,
   onAvaliar, 
   onVerNoTabuleiro,
@@ -115,6 +117,7 @@ export function GameOverModal({
           <div className="w-full flex flex-col items-center mt-4 animate-in fade-in zoom-in duration-300">
             <CheckCircle2 size={40} className="text-emerald-500 mb-3" />
             <p className="text-white font-bold mb-4">Avaliação Concluída!</p>
+            {erroAnalise && <p className="text-amber-300 text-xs mb-4">{erroAnalise}</p>}
             
             <Button 
               label="Ver Relatório" 

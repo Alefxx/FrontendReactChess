@@ -1,5 +1,5 @@
 // src/features/stockfish/analysis/hooks/useAnalysis.ts
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { analysisService, AnalisePosicao } from '@/features/stockfish/analysis/service/analysis.service';
 import { openingService } from '@/features/stockfish/analysis/service/opening.service';
 
@@ -11,11 +11,26 @@ import { openingService } from '@/features/stockfish/analysis/service/opening.se
  */
 export function useAnalysis(gameFen: string, isEvalBarEnabled: boolean = false, depth: number = 15) {
   const [evalData, setEvalData] = useState<AnalisePosicao | null>(null);
+  const [loadedOpening, setLoadedOpening] = useState<{ fen: string; opening: ReturnType<typeof openingService.getOpening> } | null>(null);
+  const currentOpening = loadedOpening?.fen === gameFen
+    ? loadedOpening.opening
+    : openingService.getOpening(gameFen);
 
-  // Identifica a abertura em tempo real sempre que a FEN mudar
-  const currentOpening = useMemo(() => {
-    if (!gameFen) return null;
-    return openingService.getOpening(gameFen) || null;
+  // Carrega o livro uma única vez e recalcula a abertura após a resposta assíncrona.
+  useEffect(() => {
+    let active = true;
+    if (!gameFen) return;
+    void openingService.loadOpenings()
+      .then(() => {
+        if (active) setLoadedOpening({ fen: gameFen, opening: openingService.getOpening(gameFen) });
+      })
+      .catch(() => {
+        if (active) setLoadedOpening({ fen: gameFen, opening: null });
+      });
+
+    return () => {
+      active = false;
+    };
   }, [gameFen]);
 
   useEffect(() => {

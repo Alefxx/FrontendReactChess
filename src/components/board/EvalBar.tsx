@@ -1,4 +1,3 @@
-import React from 'react';
 import { calcularAlturaBarraBranca, formatarTextoAvaliacao } from '@/features/stockfish/analysis/utils/evalBar.utils';
 
 interface EvalBarProps {

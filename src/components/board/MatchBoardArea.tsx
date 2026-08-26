@@ -33,6 +33,7 @@ interface MatchBoardAreaProps {
   // Fim de Jogo e Análise
   gameOver: any;
   progressoFila: any;
+  erroAnalise?: string | null;
   minhasEstatisticas: any;
   iniciarAvaliacaoFimDeJogo: () => void;
   pararAvaliacao: () => void;
@@ -65,6 +66,7 @@ export function MatchBoardArea({
   isMate,
   gameOver,
   progressoFila,
+  erroAnalise,
   minhasEstatisticas,
   iniciarAvaliacaoFimDeJogo,
   pararAvaliacao,
@@ -138,6 +140,7 @@ export function MatchBoardArea({
             motivo={gameOver.motivo} 
             minhaCor={minhaCor}
             progressoFila={progressoFila}
+            erroAnalise={erroAnalise}
             stats={minhasEstatisticas}
             onAvaliar={() => iniciarAvaliacaoFimDeJogo()}
             

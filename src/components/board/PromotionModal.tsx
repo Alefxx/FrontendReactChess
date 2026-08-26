@@ -1,6 +1,5 @@
 // src/components/board/PromotionModal.tsx
-import React from 'react';
-import { ChessPiece, pieceImages } from '../pieces/ChessPiece';
+import { pieceImages } from '../pieces/ChessPiece';
 
 interface PromotionModalProps {
   cor: 'branca' | 'preta';

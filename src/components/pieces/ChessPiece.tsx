@@ -1,4 +1,3 @@
-import React from 'react';
 
 // O dicionário
 export const pieceImages: Record<string, string> = {

@@ -1,5 +1,4 @@
 // src/screens/AnalysisSummaryScreen.tsx
-import React from 'react';
 import { Search, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { MoveQualityIcon, MoveQuality } from '@/components/analysis/MoveQualityIcon';

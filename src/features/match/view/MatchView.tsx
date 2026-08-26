@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom'; // CORREÇÃO: Removido o useMatch daqui
 import { PlayerPanel } from '@/components/board/PlayerPanel';
 import { MatchBoardArea } from '@/components/board/MatchBoardArea';
@@ -79,6 +79,7 @@ export function MatchView() {
           isMate={matchState.isMate}
           gameOver={matchState.gameOver}
           progressoFila={matchState.progressoFila}
+          erroAnalise={matchState.erroAnalise}
           minhasEstatisticas={matchState.minhasEstatisticas}
           iniciarAvaliacaoFimDeJogo={matchState.iniciarAvaliacaoFimDeJogo}
           pararAvaliacao={matchState.pararAvaliacao}

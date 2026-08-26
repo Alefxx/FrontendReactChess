@@ -1,5 +1,4 @@
 // src/components/analysis/MoveQualityIcon.tsx
-import React from 'react';
 import { BookOpen } from 'lucide-react';
 
 export type MoveQuality = 'book' | 'best' | 'great' | 'inaccuracy' | 'mistake' | 'blunder';

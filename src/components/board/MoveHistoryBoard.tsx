@@ -1,5 +1,15 @@
 import { Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { MoveQuality, MoveQualityIcon } from '@/components/analysis/MoveQualityIcon';
+
+const QUALITY_BY_CODE: Record<number, MoveQuality> = {
+  0: 'book',
+  1: 'best',
+  2: 'great',
+  3: 'inaccuracy',
+  4: 'mistake',
+  5: 'blunder',
+};
 
 interface MoveHistoryBoardProps {
   pgnHistory: string[]; 
@@ -7,6 +17,7 @@ interface MoveHistoryBoardProps {
   onAbandonar?: () => void;    // Marcado como opcional
   currentMoveIndex?: number;   // Adicionado para a tela de análise
   onMoveClick?: (index: number) => void; // Adicionado para navegar na análise
+  moveCodes?: number[];
 }
 
 export function MoveHistoryBoard({ 
@@ -14,7 +25,8 @@ export function MoveHistoryBoard({
   onProporEmpate, 
   onAbandonar,
   currentMoveIndex = -1,
-  onMoveClick
+  onMoveClick,
+  moveCodes,
 }: MoveHistoryBoardProps) {
   const turnos = [];
   for (let i = 0; i < pgnHistory.length; i += 2) {
@@ -53,7 +65,12 @@ export function MoveHistoryBoard({
                 className={`${baseMoveClass} ${interactiveClass} ${isBrancasAtivo ? 'bg-slate-600 text-white font-bold shadow-sm' : 'text-slate-300 font-bold'}`}
                 onClick={() => onMoveClick && onMoveClick(turno.indiceBrancas)}
               >
-                {turno.brancas}
+                <span className="flex items-center gap-1.5">
+                  {turno.brancas}
+                  {moveCodes?.[turno.indiceBrancas] !== undefined && (
+                    <MoveQualityIcon quality={QUALITY_BY_CODE[moveCodes[turno.indiceBrancas]]} className="scale-75 origin-left" />
+                  )}
+                </span>
               </div>
 
               {/* Lance das Pretas */}
@@ -61,7 +78,14 @@ export function MoveHistoryBoard({
                 className={`${baseMoveClass} ${interactiveClass} ${isPretasAtivo ? 'bg-slate-600 text-white font-bold shadow-sm' : 'text-slate-400'}`}
                 onClick={() => turno.pretas && onMoveClick && onMoveClick(turno.indicePretas)}
               >
-                {turno.pretas || ''}
+                {turno.pretas && (
+                  <span className="flex items-center gap-1.5">
+                    {turno.pretas}
+                    {moveCodes?.[turno.indicePretas] !== undefined && (
+                      <MoveQualityIcon quality={QUALITY_BY_CODE[moveCodes[turno.indicePretas]]} className="scale-75 origin-left" />
+                    )}
+                  </span>
+                )}
               </div>
             </div>
           );

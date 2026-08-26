@@ -176,6 +176,7 @@ export function MatchAnalysis() {
       <aside className="w-full lg:w-80 flex flex-col gap-4">
         <MoveHistoryBoard 
           pgnHistory={moveHistory} 
+          moveCodes={avaliacoesLocais}
           currentMoveIndex={currentMoveIndex > 0 ? currentMoveIndex - 1 : -1} 
           onMoveClick={(pgnIndex) => goToMove(pgnIndex + 1)} 
         />

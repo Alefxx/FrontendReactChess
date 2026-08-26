@@ -1,122 +1,113 @@
-// src/features/stockfish/classificationmoves/hooks/useMoveClassification.ts
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { analysisService, AnalisePosicao } from '../../analysis/service/analysis.service';
 import { MoveClassifierService } from '../service/moveClassifier.service';
 import { openingService } from '../../analysis/service/opening.service';
 
-export function useMoveClassification(
-  historicoRealFens: string[], // Array completo do histórico real de jogo
-  isEvalBarEnabled: boolean,
-  onAvaliacaoPronta: (codigo: number, id: number) => void 
-) {
-  
-  const [progressoFila, setProgressoFila] = useState({ avaliados: 0, total: 0 });
-  
-  const avaliacoes = useRef<AnalisePosicao[]>([]);
-  const indiceAtual = useRef<number>(0);
-  
-  const isProcessando = useRef(false);
-  const isPausado = useRef(isEvalBarEnabled); 
-  const isDesmontado = useRef(false); // NOVO: Previne memory leak se o componente sumir
+const NEUTRAL_ANALYSIS: AnalisePosicao = {
+  vantagemBrancas: 0,
+  tipo: 'cp',
+  valorOriginal: 0,
+};
 
-  // Cleanup na desmontagem
+/** Analisa a fita da partida somente quando o jogador solicita o relatório final. */
+export function useMoveClassification(
+  historicoRealFens: string[],
+  _isEvalBarEnabled: boolean,
+  onAvaliacaoPronta: (codigo: number, id: number) => void,
+) {
+  const [progressoFila, setProgressoFila] = useState({ avaliados: 0, total: 0 });
+  const [erroAnalise, setErroAnalise] = useState<string | null>(null);
+  const historicoRef = useRef(historicoRealFens);
+  const avaliacoes = useRef<AnalisePosicao[]>([]);
+  const indiceAtual = useRef(0);
+  const isProcessando = useRef(false);
+  const isPausado = useRef(true);
+  const isDesmontado = useRef(false);
+
   useEffect(() => {
+    historicoRef.current = historicoRealFens;
+  }, [historicoRealFens]);
+
+  useEffect(() => {
+    // O React StrictMode executa setup/cleanup uma vez extra em desenvolvimento.
+    isDesmontado.current = false;
+
     return () => {
       isDesmontado.current = true;
       isPausado.current = true;
+      analysisService.stopSyncAnalysis();
     };
   }, []);
 
-  // 1. Controle de pausa sincronizado com a UI
-  useEffect(() => {
-    isPausado.current = isEvalBarEnabled;
-    if (!isEvalBarEnabled && !isDesmontado.current) {
-      processarFilaBackground();
-    }
-  }, [isEvalBarEnabled]);
-
-  // 2. Escuta APENAS o crescimento do array de histórico real
-  useEffect(() => {
-    setProgressoFila(p => ({ ...p, total: historicoRealFens.length }));
-    
-    if (!isPausado.current && historicoRealFens.length > indiceAtual.current && !isDesmontado.current) {
-      processarFilaBackground();
-    }
-  }, [historicoRealFens.length]); 
-
-  // 3. O Motor que consome a fila e intercepta lances de livro
   const processarFilaBackground = useCallback(async () => {
     if (isProcessando.current || isPausado.current || isDesmontado.current) return;
-    
+
     isProcessando.current = true;
+    setErroAnalise(null);
 
-    while (indiceAtual.current < historicoRealFens.length && !isPausado.current && !isDesmontado.current) {
-      const fenAtual = historicoRealFens[indiceAtual.current];
-      
+    try {
+      await openingService.loadOpenings();
+    } catch {
+      console.warn('[MoveClassification] Livro indisponível; avaliando todos os lances no motor.');
+    }
+
+    while (!isPausado.current && !isDesmontado.current && indiceAtual.current < historicoRef.current.length) {
+      const index = indiceAtual.current;
+      const fenAtual = historicoRef.current[index];
+
       try {
-        const isStart = openingService.isStartPosition(fenAtual);
-        const opening = openingService.getOpening(fenAtual);
+        const isBookPosition = openingService.isStartPosition(fenAtual) || Boolean(openingService.getOpening(fenAtual));
+        const analiseAtual = isBookPosition
+          ? NEUTRAL_ANALYSIS
+          : await analysisService.avaliarFenSincrono(fenAtual, 15);
 
-        if (isStart || opening) {
-          // Lance teórico! Pula o Stockfish e injeta um Mock neutro
-          const analiseNeutra: AnalisePosicao = { 
-            vantagemBrancas: 0, 
-            tipo: 'cp', 
-            valorOriginal: 0, // Corrigido para bater com a interface AnalisePosicao original
-          } as AnalisePosicao;
+        if (isPausado.current || isDesmontado.current) break;
 
-          avaliacoes.current[indiceAtual.current] = analiseNeutra;
+        avaliacoes.current[index] = analiseAtual;
 
-          if (indiceAtual.current > 0) {
-            onAvaliacaoPronta(0, indiceAtual.current); 
-          }
-        } 
-        else {
-          // Saímos da teoria. Manda para o worker síncrono
-          const analiseFinal = await analysisService.avaliarFenSincrono(fenAtual, 15);
-          
-          // Se pausou no meio da requisição, abandona o processamento atual
-          if (isPausado.current || isDesmontado.current) break;
-
-          avaliacoes.current[indiceAtual.current] = analiseFinal;
-
-          if (indiceAtual.current > 0) {
-             const evalAnterior = avaliacoes.current[indiceAtual.current - 1];
-             const corQueJogou = fenAtual.split(' ')[1] === 'b' ? 'w' : 'b';
-             
-             const codigo = MoveClassifierService.classificar(evalAnterior, analiseFinal, corQueJogou);
-             onAvaliacaoPronta(codigo, indiceAtual.current); 
-          }
+        if (index > 0) {
+          const codigo = isBookPosition
+            ? 0
+            : MoveClassifierService.classificar(
+                avaliacoes.current[index - 1] ?? NEUTRAL_ANALYSIS,
+                analiseAtual,
+                fenAtual.split(' ')[1] === 'b' ? 'w' : 'b',
+              );
+          onAvaliacaoPronta(codigo, index);
         }
-
-        indiceAtual.current += 1;
-        setProgressoFila(p => ({ ...p, avaliados: indiceAtual.current }));
-        
       } catch (error) {
-        console.error("[MoveClassification] Erro na avaliação da fila em background:", error);
-        // Em caso de falha severa na engine, avança o índice para não travar a fila eternamente
-        indiceAtual.current += 1;
+        // Uma posição inválida ou falha do worker não pode deixar o modal em progresso infinito.
+        console.error('[MoveClassification] Erro ao avaliar posição:', error);
+        avaliacoes.current[index] = NEUTRAL_ANALYSIS;
+        setErroAnalise('Algumas posições não puderam ser calculadas pelo motor.');
+      } finally {
+        // Sempre contabilize o item atual, inclusive em caso de erro.
+        if (!isPausado.current && !isDesmontado.current) {
+          indiceAtual.current = index + 1;
+          setProgressoFila({ avaliados: index + 1, total: historicoRef.current.length });
+        }
       }
     }
 
     isProcessando.current = false;
-  }, [historicoRealFens, onAvaliacaoPronta]);
+  }, [onAvaliacaoPronta]);
 
-  // 4. Ações para o Modal de Fim de Jogo controlar
   const iniciarAvaliacaoFimDeJogo = useCallback(() => {
+    if (isDesmontado.current) return;
     isPausado.current = false;
-    processarFilaBackground();
+    setProgressoFila({ avaliados: indiceAtual.current, total: historicoRef.current.length });
+    void processarFilaBackground();
   }, [processarFilaBackground]);
 
   const pararAvaliacao = useCallback(() => {
     isPausado.current = true;
-    // ATUALIZAÇÃO: Chama o método dedicado a parar apenas o Worker do background
-    analysisService.stopSyncAnalysis(); 
+    analysisService.stopSyncAnalysis();
   }, []);
 
   return {
-    progressoFila,
+    progressoFila: { ...progressoFila, total: historicoRealFens.length },
+    erroAnalise,
     iniciarAvaliacaoFimDeJogo,
-    pararAvaliacao
+    pararAvaliacao,
   };
 }

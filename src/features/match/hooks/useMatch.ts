@@ -1,5 +1,4 @@
 // src/features/match/hooks/useMatch.ts
-import { useCallback } from 'react';
 import { matchService } from '@/features/match/service/match.service';
 import { Bot } from '@/features/botselection/service/bot.service';
 
@@ -37,6 +36,7 @@ export function useMatch(partidaData: any, currentUser: any, botOponente?: Bot, 
   // ATUALIZAÇÃO: Fila consumindo o histórico em array (memory.fenHistory) em vez do FEN isolado da tela
   const { 
     progressoFila, 
+    erroAnalise,
     iniciarAvaliacaoFimDeJogo, 
     pararAvaliacao 
   } = useMoveClassification(memory.fenHistory, isEvalBarEnabled, memory.registrarAvaliacaoLocal);
@@ -173,6 +173,7 @@ export function useMatch(partidaData: any, currentUser: any, botOponente?: Bot, 
     isMate,
     currentOpening,
     progressoFila,
+    erroAnalise,
     iniciarAvaliacaoFimDeJogo,
     pararAvaliacao,          
     onPieceDrop,

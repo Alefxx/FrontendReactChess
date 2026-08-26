@@ -1,5 +1,4 @@
 // src/components/board/ChessClock.tsx
-import React from 'react';
 
 interface ChessClockProps {
   formato: string;
