@@ -7,6 +7,7 @@
 export class EngineService {
   private worker: Worker | null = null;
   private isReady = false;
+  private isThinking = false; // NOVO: Trava de concorrência
 
   constructor() {
     this.init();
@@ -17,18 +18,16 @@ export class EngineService {
    */
   private init() {
     if (typeof Worker !== 'undefined') {
-      // O arquivo stockfish.js deve estar acessível na pasta /public
+      // Cria a própria instância isolada do bot
       this.worker = new Worker('/stockfish.js');
       
       this.worker.onmessage = (event) => {
-        // 'uciok' indica que o motor carregou com sucesso e aceita comandos
         if (event.data === 'uciok') {
           this.isReady = true;
           this.worker?.postMessage('isready');
         }
       };
 
-      // Inicia o handshake do protocolo UCI
       this.worker.postMessage('uci');
     }
   }
@@ -41,37 +40,58 @@ export class EngineService {
    * @returns Uma Promise que resolve com a string do movimento (ex: "e2e4").
    */
   public getBestMove(fen: string, depth: number = 1, skillLevel: number = 0): Promise<string> {
-    return new Promise((resolve) => {
-      if (!this.worker) return resolve("");
+    return new Promise((resolve, reject) => {
+      if (!this.worker) return reject("Worker do motor não inicializado.");
+      
+      // Bloqueia múltiplas requisições simultâneas (impede bug de duplo lance)
+      if (this.isThinking) return reject("Motor já está calculando uma jogada.");
 
-      /**
-       * Escuta as mensagens do Worker até encontrar o padrão 'bestmove'.
-       */
-      const onMessage = (event: MessageEvent) => {
-        const linha = event.data;
-        if (linha.startsWith('bestmove')) {
-          const move = linha.split(' ')[1];
-          // Remove o listener após obter a resposta para evitar vazamento de memória
-          this.worker?.removeEventListener('message', onMessage);
-          resolve(move);
-        }
+      this.isThinking = true;
+      let timeoutSeguranca: ReturnType<typeof setTimeout>;
+
+      // Função de limpeza para garantir que destravamos o serviço
+      const finalizar = (move: string) => {
+        this.isThinking = false;
+        clearTimeout(timeoutSeguranca);
+        resolve(move);
       };
 
-      this.worker.addEventListener('message', onMessage);
+      // Sobrescrevemos o listener exclusivo para esta jogada
+      this.worker.onmessage = (event: MessageEvent) => {
+        const linha = event.data;
+        
+        if (linha.startsWith('bestmove')) {
+          const move = linha.split(' ')[1];
+          finalizar(move || ""); 
+        }
+      };
       
-      // Aplica as configurações de força e dificuldade
       this.worker.postMessage(`setoption name Skill Level value ${skillLevel}`);
       
-      // Define a posição no tabuleiro (converte 'start' para a FEN inicial padrão)
       const posicaoFen = fen === 'start' 
         ? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1' 
         : fen;
         
       this.worker.postMessage(`position fen ${posicaoFen}`);
-      
-      // Inicia o cálculo do movimento
       this.worker.postMessage(`go depth ${depth}`);
+
+      // Timeout de Fuga: Se o Stockfish travar (ex: engine crash), liberamos a thread após 15s.
+      timeoutSeguranca = setTimeout(() => {
+        console.warn("[BOT] Timeout atingido no cálculo do motor, forçando parada.");
+        this.worker?.postMessage('stop');
+        finalizar(""); 
+      }, 15000);
     });
+  }
+
+  /**
+   * Força a parada imediata do processamento de uma jogada.
+   */
+  public stopThinking() {
+    if (this.isThinking && this.worker) {
+      this.worker.postMessage('stop');
+      this.isThinking = false;
+    }
   }
 
   /**
@@ -85,5 +105,4 @@ export class EngineService {
   }
 }
 
-// Exporta uma única instância para ser utilizada em toda a aplicação (Singleton)
 export const engineService = new EngineService();

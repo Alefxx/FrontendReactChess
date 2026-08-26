@@ -7,8 +7,12 @@ export interface AnalisePosicao {
 }
 
 export class AnalysisService {
-  private worker: Worker | null = null;
-  private isAnalyzing = false;
+  // ATUALIZAÇÃO: Separação de instâncias para evitar conflitos de concorrência
+  private workerStream: Worker | null = null; // Dedicado à EvalBar (Tempo Real)
+  private workerSync: Worker | null = null;   // Dedicado à Fila de Classificação (Background)
+  
+  private isAnalyzingStream = false;
+  private isAnalyzingSync = false;
 
   constructor() {
     this.init();
@@ -16,18 +20,33 @@ export class AnalysisService {
 
   private init() {
     if (typeof Worker !== 'undefined') {
-      this.worker = new Worker('/stockfish.js');
-      this.worker.postMessage('uci');
+      // Instancia o motor para a EvalBar
+      this.workerStream = new Worker('/stockfish.js');
+      this.workerStream.postMessage('uci');
+
+      // Instancia um SEGUNDO motor, isolado, para o background
+      this.workerSync = new Worker('/stockfish.js');
+      this.workerSync.postMessage('uci');
     }
   }
 
   /**
-   * Para a análise atual imediatamente.
+   * Para APENAS a análise da EvalBar (Tempo Real)
    */
   public stopAnalysis() {
-    if (this.isAnalyzing && this.worker) {
-      this.worker.postMessage('stop');
-      this.isAnalyzing = false;
+    if (this.isAnalyzingStream && this.workerStream) {
+      this.workerStream.postMessage('stop');
+      this.isAnalyzingStream = false;
+    }
+  }
+
+  /**
+   * NOVO: Para APENAS a análise da Fila (Síncrono/Background)
+   */
+  public stopSyncAnalysis() {
+    if (this.isAnalyzingSync && this.workerSync) {
+      this.workerSync.postMessage('stop');
+      this.isAnalyzingSync = false;
     }
   }
 
@@ -41,12 +60,13 @@ export class AnalysisService {
     onUpdate: (analise: AnalisePosicao) => void
   ) {
     this.stopAnalysis(); 
-    if (!this.worker) return;
+    if (!this.workerStream) return;
 
-    this.isAnalyzing = true;
+    this.isAnalyzingStream = true;
     const isTurnoPretas = fen.includes(' b ');
 
-    this.worker.onmessage = (event: MessageEvent) => {
+    // Atrela o evento APENAS ao worker da EvalBar
+    this.workerStream.onmessage = (event: MessageEvent) => {
       const linha = event.data;
 
       if (linha.startsWith('info') && linha.includes('score')) {
@@ -70,48 +90,42 @@ export class AnalysisService {
       ? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1' 
       : fen;
 
-    this.worker.postMessage(`position fen ${posicaoFen}`);
-    this.worker.postMessage(`go depth ${depth}`);
+    this.workerStream.postMessage(`position fen ${posicaoFen}`);
+    this.workerStream.postMessage(`go depth ${depth}`);
   }
 
   /**
    * 2. NOVO MÉTODO (Fila / Síncrono)
    * Usado pelo gerenciador de fila (useMoveClassification). 
-   * Devolve uma Promise que só resolve quando o Stockfish atinge o Depth final.
-   * ATUALIZADO: Inclui "Timeout de Fuga" para evitar travamento em posições de Mate.
    */
   public avaliarFenSincrono(fen: string, depth: number = 15): Promise<AnalisePosicao> {
     return new Promise((resolve, reject) => {
-      this.stopAnalysis(); 
-      if (!this.worker) return reject("Worker indisponível");
+      this.stopSyncAnalysis(); 
+      if (!this.workerSync) return reject("Worker indisponível");
 
-      this.isAnalyzing = true;
+      this.isAnalyzingSync = true;
       const isTurnoPretas = fen.includes(' b ');
       let ultimaAnalise: AnalisePosicao | null = null;
       let timeoutFuga: ReturnType<typeof setTimeout> | null = null;
 
-      // Função interna para encerrar a Promise com segurança e limpar timeouts
       const finalizar = () => {
-        this.isAnalyzing = false;
+        this.isAnalyzingSync = false;
         if (timeoutFuga) clearTimeout(timeoutFuga);
         
         if (ultimaAnalise) {
           resolve(ultimaAnalise);
         } else {
-          // Fallback preventivo (ex: posição de xeque-mate consumado onde não há lances)
           resolve({ tipo: 'cp', valorOriginal: 0, vantagemBrancas: 0 });
         }
       };
 
-      // Sobrescreve o listener para esta requisição específica
-      this.worker.onmessage = (event: MessageEvent) => {
+      // Atrela o evento APENAS ao worker do background
+      this.workerSync.onmessage = (event: MessageEvent) => {
         const linha = event.data;
 
-        // Anti-Travamento: Se o motor ficar 1.5s sem enviar nada, forçamos a finalização.
         if (timeoutFuga) clearTimeout(timeoutFuga);
         timeoutFuga = setTimeout(finalizar, 1500);
 
-        // Atualiza silenciosamente a última análise conhecida
         if (linha.startsWith('info') && linha.includes('score')) {
           const matchCp = linha.match(/score cp (-?\d+)/);
           const matchMate = linha.match(/score mate (-?\d+)/);
@@ -124,7 +138,6 @@ export class AnalysisService {
             const lancesParaMate = parseInt(matchMate[1], 10);
             ultimaAnalise = { tipo: 'mate', valorOriginal: lancesParaMate, vantagemBrancas: isTurnoPretas ? -lancesParaMate : lancesParaMate };
             
-            // SE for mate consumado (0 lances para mate no tabuleiro), não haverá 'bestmove', então encerramos imediatamente!
             if (lancesParaMate === 0) {
               finalizar();
               return; 
@@ -132,7 +145,6 @@ export class AnalysisService {
           }
         }
 
-        // Quando o motor terminar a profundidade (depth), ele enviará 'bestmove'
         if (linha.startsWith('bestmove')) {
           finalizar();
         }
@@ -142,18 +154,21 @@ export class AnalysisService {
         ? 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1' 
         : fen;
 
-      this.worker.postMessage(`position fen ${posicaoFen}`);
-      this.worker.postMessage(`go depth ${depth}`);
+      this.workerSync.postMessage(`position fen ${posicaoFen}`);
+      this.workerSync.postMessage(`go depth ${depth}`);
       
-      // Timeout inicial pro caso extremo do motor não emitir nada após o comando (posição morta)
       timeoutFuga = setTimeout(finalizar, 2000);
     });
   }
 
   public terminate() {
-    if (this.worker) {
-      this.worker.terminate();
-      this.worker = null;
+    if (this.workerStream) {
+      this.workerStream.terminate();
+      this.workerStream = null;
+    }
+    if (this.workerSync) {
+      this.workerSync.terminate();
+      this.workerSync = null;
     }
   }
 }
