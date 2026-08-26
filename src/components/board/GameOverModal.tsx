@@ -32,7 +32,7 @@ export function GameOverModal({
   const [showSummary, setShowSummary] = useState(false);
 
   // NOVO: Fallback seguro. Se a tela anterior não enviar o stats, não quebraremos o botão.
-  const defaultStats: MoveStats = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+  const defaultStats: MoveStats = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   const safeStats = stats || defaultStats;
 
   // CORRIGIDO: Removemos a dependência do "&& stats" que causava a falha silenciosa
