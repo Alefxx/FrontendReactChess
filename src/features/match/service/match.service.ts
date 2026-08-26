@@ -70,12 +70,13 @@ export interface AvaliacaoPayload {
 }
 
 /**
- * Função utilitária privada para padronizar a extração e o lançamento de erros da API.
+ * Função utilitária privada para padronizar a extração da mensagem de erro.
+ * Agora ela RETORNA o Error para ser lançado diretamente no bloco catch.
  */
-const handleApiError = (err: unknown, defaultMessage: string): never => {
+const handleApiError = (err: unknown, defaultMessage: string): Error => {
   const error = err as AxiosError<{ erro?: string }>;
   const errorMessage = error.response?.data?.erro || defaultMessage;
-  throw new Error(errorMessage);
+  return new Error(errorMessage);
 };
 
 /**
@@ -88,7 +89,7 @@ export const matchService = {
       const response = await apiClient.post<MatchResponse>('/partida/nova', dados);
       return response.data;
     } catch (err) {
-      handleApiError(err, "Falha ao iniciar partida.");
+      throw handleApiError(err, "Falha ao iniciar partida.");
     }
   },
 
@@ -97,7 +98,7 @@ export const matchService = {
       const response = await apiClient.post<MoveResponse>(`/partida/${partidaId}/mover`, dados);
       return response.data;
     } catch (err) {
-      handleApiError(err, "Movimento inválido ou erro de servidor.");
+      throw handleApiError(err, "Movimento inválido ou erro de servidor.");
     }
   },
 
@@ -106,7 +107,7 @@ export const matchService = {
       await apiClient.post(`/partida/${partidaId}/avaliacao`, dados);
       return true;
     } catch (err) {
-      handleApiError(err, "Erro ao registrar avaliação do lance.");
+      throw handleApiError(err, "Erro ao registrar avaliação do lance.");
     }
   },
 
@@ -115,7 +116,7 @@ export const matchService = {
       const response = await apiClient.get(`/partida/${partidaId}/estado`);
       return response.data;
     } catch (err) {
-      handleApiError(err, "Erro ao buscar estado da partida.");
+      throw handleApiError(err, "Erro ao buscar estado da partida.");
     }
   },
 
@@ -124,7 +125,7 @@ export const matchService = {
       const response = await apiClient.get(`/partida/${partidaId}/movimentos/${origem}?cor=${cor}`);
       return response.data.podeIrPara || [];
     } catch (err) {
-      handleApiError(err, "Erro ao consultar movimentos válidos.");
+      throw handleApiError(err, "Erro ao consultar movimentos válidos.");
     }
   },
 
@@ -133,7 +134,7 @@ export const matchService = {
       const response = await apiClient.get<SyncClockResponse>(`/partida/${partidaId}/relogio`);
       return response.data;
     } catch (err) {
-      handleApiError(err, "Erro ao sincronizar relógio.");
+      throw handleApiError(err, "Erro ao sincronizar relógio.");
     }
   },
 
@@ -143,7 +144,7 @@ export const matchService = {
       const response = await apiClient.post<MoveResponse>(`/partida/${partidaId}/desistir`, { corQueDesistiu });
       return response.data;
     } catch (err) {
-      handleApiError(err, "Erro ao tentar desistir da partida.");
+      throw handleApiError(err, "Erro ao tentar desistir da partida.");
     }
   }
 };

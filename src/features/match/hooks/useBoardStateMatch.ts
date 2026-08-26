@@ -30,9 +30,8 @@ export function useBoardStateMatch(partidaData: any, currentUser: any) {
   // Extração do turno atual da string FEN ('w' para brancas, 'b' para pretas)
   const turnoAtualFEN = gameFen.split(' ')[1] || 'w'; 
   
-  // ALTERAÇÃO: No modo local, a 'minhaCor' (cor que envia o comando pra API) alterna dinamicamente 
-  // conforme o turno FEN. No online/bot, ela continua cravada na conta do usuário logado.
-  const minhaCor = isLocal 
+  // CORREÇÃO AQUI: Tipagem estrita na declaração da variável
+  const minhaCor: 'branca' | 'preta' = isLocal 
     ? (turnoAtualFEN === 'w' ? 'branca' : 'preta') 
     : (brancasUser === logadoUser ? 'branca' : 'preta');
   
