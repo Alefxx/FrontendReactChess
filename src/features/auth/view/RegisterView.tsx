@@ -77,11 +77,11 @@ export function RegisterView() {
   };
 
   return (
-    <div className="w-full flex flex-col items-center">
+    <div className="flex min-h-[calc(100vh-2rem)] w-full flex-col items-center justify-center py-6 sm:min-h-[calc(100vh-3rem)]">
       <header className="mb-8 flex flex-col items-center text-center">
         <Logo size="lg" />
         <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.4em] mt-3">
-          Grandmaster Analysis Engine
+          Crie seu espaço no tabuleiro
         </p>
       </header>
 
@@ -96,8 +96,8 @@ export function RegisterView() {
             />
           </div>
           
-          <h2 className="text-xl md:text-2xl font-bold text-white">
-            Novo Jogador
+          <h2 className="text-xl font-black text-white md:text-2xl">
+            Crie sua conta
           </h2>
         </div>
         
@@ -108,7 +108,8 @@ export function RegisterView() {
         )}
         
         {/* Coleção de inputs para captação de dados do perfil */}
-        <div className="flex flex-col gap-4 mb-8">
+        <p className="mb-6 text-center text-sm text-slate-400">Configure o seu perfil e comece a jogar.</p>
+        <div className="mb-7 flex flex-col gap-4">
           <Input label="Nome Completo" value={nome} onChange={setNome} placeholder="Ex: Thayná Silva" />
           <Input label="Nome de Usuário (Username)" value={username} onChange={setUsername} placeholder="Ex: thayna_dev" />
           <Input label="Senha" type="password" value={senha} onChange={setSenha} placeholder="Crie uma senha forte" />

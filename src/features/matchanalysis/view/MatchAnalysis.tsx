@@ -86,20 +86,20 @@ export function MatchAnalysis() {
   }, [prevMove, nextMove]);
 
   return (
-    <div className="w-full max-w-6xl mx-auto flex flex-col lg:flex-row gap-8 py-4 px-2 min-h-[90vh]">
+    <div className="page-container grid max-w-7xl items-start gap-4 py-1 sm:py-3 xl:grid-cols-[minmax(0,1fr)_19rem] xl:gap-5">
       
-      <div className="flex-1 flex flex-col gap-4">
+      <div className="mx-auto flex w-full max-w-[730px] flex-col gap-3">
         
         {/* Adversário */}
         <div className="flex flex-col">
-          <div className="flex justify-between items-center bg-slate-800/40 p-2 rounded-lg">
+          <div className="surface-subtle flex items-center justify-between gap-2 rounded-2xl p-2.5">
             <UserProfileWidget 
               nome={partidaData.jogadores.pretas} 
               rating={botOponente?.rating || 1500} 
               iniciais="OP" 
               foto={botOponente?.foto}
             />
-            <span className="text-slate-500 font-semibold px-3 py-1 bg-slate-900 rounded-md text-sm">
+            <span className="rounded-lg bg-slate-950/70 px-3 py-1.5 text-xs font-bold text-slate-400">
               Análise
             </span>
           </div>
@@ -107,12 +107,12 @@ export function MatchAnalysis() {
         </div>
 
         {/* Tabuleiro + EvalBar */}
-        <div className="w-full max-w-[640px] mx-auto relative mt-4 flex gap-2 md:gap-3 items-stretch">
+        <div className="relative mx-auto mt-1 flex w-full max-w-[680px] items-stretch gap-2 sm:gap-3">
           <div className="flex flex-shrink-0">
             <EvalBar vantagemBrancas={vantagemBrancas} isMate={isMate} isInvertida={minhaCor === 'preta'} />
           </div>
 
-          <div className="flex-1 relative flex flex-col">
+          <div className="relative min-w-0 flex-1 flex-col">
             <CheckAlert isCheck={isCheck} />
 
             <CustomChessboard 
@@ -123,7 +123,7 @@ export function MatchAnalysis() {
             />
 
             {/* Controles de Navegação */}
-            <div className="mt-4 flex flex-col bg-slate-800/60 p-2 rounded-xl border border-slate-700">
+            <div className="surface-subtle mt-3 flex flex-col rounded-2xl p-2">
               <div className="flex items-center justify-between">
                 <NavigationArrow direction="left" onClick={prevMove} disabled={isFirstMove} />
 
@@ -163,7 +163,7 @@ export function MatchAnalysis() {
         {/* Jogador */}
         <div className="flex flex-col">
           <CapturedPieces fen={gameFen} capturedColor={minhaCor === 'branca' ? 'black' : 'white'} />
-          <div className="flex justify-between items-center bg-slate-800/40 p-2 rounded-lg mt-1">
+          <div className="surface-subtle mt-1 flex items-center justify-between gap-2 rounded-2xl p-2.5">
             <UserProfileWidget 
               nome={currentUser.nome} 
               rating={currentUser.rating} 
@@ -173,7 +173,7 @@ export function MatchAnalysis() {
         </div>
       </div>
 
-      <aside className="w-full lg:w-80 flex flex-col gap-4">
+      <aside className="flex w-full flex-col gap-3 xl:sticky xl:top-5">
         <MoveHistoryBoard 
           pgnHistory={moveHistory} 
           moveCodes={avaliacoesLocais}

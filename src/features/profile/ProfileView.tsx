@@ -71,22 +71,22 @@ export function ProfileView() {
   };
 
   return (
-    <div className="w-full max-w-xl mx-auto flex flex-col pt-4 pb-12 min-h-[85vh]">
+    <div className="page-container flex min-h-[calc(100vh-2rem)] max-w-2xl flex-col py-2 sm:min-h-[calc(100vh-3rem)] sm:py-5">
       
       {/* Cabeçalho com botão de retorno */}
-      <div className="flex items-center gap-4 mb-10">
+      <div className="mb-7 flex items-center gap-3">
         <IconButton 
           icon={<ArrowLeft size={24} />} 
           onClick={() => navigate('/dashboard')} 
         />
-        <h2 className="text-2xl font-black text-white">Meu Perfil</h2>
+        <div><p className="text-[11px] font-black uppercase tracking-[0.2em] text-analysis-blue">Sua conta</p><h1 className="text-2xl font-black text-white">Meu perfil</h1></div>
       </div>
 
       {/* Área Central: Visualização e Edição */}
-      <div className="flex-grow flex flex-col items-center bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-xl gap-8">
+      <div className="surface-card flex flex-grow flex-col items-center gap-7 rounded-3xl p-5 sm:p-7">
         
         {/* Foto de Perfil Atual (Centro Superior) */}
-        <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-chess-green shadow-lg bg-slate-700 shrink-0">
+        <div className="relative h-28 w-28 shrink-0 overflow-hidden rounded-full border-4 border-chess-green bg-slate-700 shadow-lg shadow-lime-500/10 sm:h-32 sm:w-32">
           <img 
             src={fotoSelecionada} 
             alt="Foto de Perfil" 
@@ -97,7 +97,7 @@ export function ProfileView() {
         {/* Campo de Nome com Alternância de Edição (Caneta) */}
         <div className="w-full max-w-sm flex flex-col gap-2">
           <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Nome do Jogador</label>
-          <div className="flex items-center gap-2 bg-slate-900 p-3 rounded-lg border border-slate-700">
+          <div className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-950/65 p-3">
             {isEditingName ? (
               <input
                 type="text"
@@ -121,14 +121,14 @@ export function ProfileView() {
 
         {/* Grade de Seleção de Avatares (Inferior) */}
         <div className="w-full flex flex-col gap-3 mt-4">
-          <label className="text-xs font-bold text-slate-400 uppercase tracking-wider text-center">Escolha um novo Avatar</label>
-          <div className="grid grid-cols-4 gap-3">
+          <label className="text-center text-xs font-black uppercase tracking-[0.16em] text-slate-400">Escolha um avatar</label>
+          <div className="grid grid-cols-4 gap-2.5 sm:gap-3">
             {listaFotos.map((path, index) => (
               <button
                 key={index}
                 onClick={() => setFotoSelecionada(path)}
                 className={`w-full aspect-square rounded-lg overflow-hidden bg-slate-900 border-2 transition-all active:scale-95
-                  ${fotoSelecionada === path ? 'border-chess-green scale-105 shadow-md' : 'border-slate-700 hover:border-slate-500'}`}
+                  ${fotoSelecionada === path ? 'border-chess-green scale-105 shadow-md shadow-lime-500/10' : 'border-slate-700 hover:border-slate-500'}`}
               >
                 <img src={path} alt={`Opção ${index + 1}`} className="w-full h-full object-cover" />
               </button>

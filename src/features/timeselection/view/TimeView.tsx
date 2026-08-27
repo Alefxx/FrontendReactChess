@@ -1,146 +1,76 @@
-// src/features/timeselection/view/TimeView.tsx
-import { ArrowLeft, Clock, Activity } from 'lucide-react'; // NOVO: Importamos Activity
+import { ArrowLeft, Clock3, Flame, Hourglass, Timer, Zap } from 'lucide-react';
 import { IconButton } from '@/components/ui/IconButton';
 import { Button } from '@/components/ui/Button';
 import { ColorSelector } from '@/components/ui/ColorSelector';
-import { TimeCard } from '@/components/ui/TimeCard';
-import { useTime } from '../hooks/useTime'; 
+import { FeatureToggle } from '@/components/ui/FeatureToggle';
+import { TimeGroup } from '@/components/ui/TimeGroup';
+import { useTime } from '../hooks/useTime';
 
-/**
- * Componente que exibe a tela de configuração de partida, permitindo a seleção de cor e controle de tempo.
- */
 export function TimeView() {
   const {
-    tempos,
-    isLoading,
-    isCreatingMatch,
-    errorMsg,
-    selectedColor,
-    setSelectedColor,
-    selectedTimeId,
-    setSelectedTimeId,
-    botOponente,
-    tipoPartida,
-    guestName,
-    isEvalBarEnabled, // NOVO: Trazendo o estado do hook
-    setIsEvalBarEnabled, // NOVO: Trazendo o setter do hook
-    handleConfirmar,
-    navigate
+    tempos, isLoading, isCreatingMatch, errorMsg, selectedColor, setSelectedColor,
+    selectedTimeId, setSelectedTimeId, botOponente, tipoPartida, guestName,
+    isEvalBarEnabled, setIsEvalBarEnabled, handleConfirmar, navigate,
   } = useTime();
 
-  const isMultiplayer = false; 
+  const timeGroups = [
+    { title: 'Bullet', description: 'Para decisões instantâneas', icon: <Zap size={18} />, accentClass: 'bg-amber-400/12 text-amber-300', list: tempos.filter((time) => time.minutos <= 2) },
+    { title: 'Blitz', description: 'Ritmo intenso e dinâmico', icon: <Flame size={18} />, accentClass: 'bg-orange-400/12 text-orange-300', list: tempos.filter((time) => time.minutos > 2 && time.minutos <= 5) },
+    { title: 'Rápida', description: 'Equilíbrio para pensar', icon: <Timer size={18} />, accentClass: 'bg-lime-400/12 text-chess-green', list: tempos.filter((time) => time.minutos > 5 && time.minutos <= 15) },
+    { title: 'Clássica', description: 'Partidas sem pressa', icon: <Hourglass size={18} />, accentClass: 'bg-sky-400/12 text-analysis-blue', list: tempos.filter((time) => time.minutos > 15) },
+  ];
 
   return (
-    <div className="w-full max-w-4xl mx-auto flex flex-col pt-4 pb-12 min-h-[85vh]">
-      
-      {/* Cabeçalho da página com botão de voltar e informações do adversário */}
-      <div className="flex items-center gap-4 mb-8">
-        <IconButton 
-          icon={<ArrowLeft size={24} />} 
-          onClick={() => navigate(-1)} 
-        />
+    <div className="page-container max-w-6xl py-2 sm:py-5">
+      <header className="mb-6 flex items-start gap-3 sm:mb-8">
+        <IconButton icon={<ArrowLeft size={20} />} onClick={() => navigate(-1)} />
         <div>
-          <h2 className="text-2xl md:text-3xl font-black text-white leading-tight">
-            Configurar <span className="text-chess-green">Partida</span>
-          </h2>
-          <p className="text-slate-400 text-sm md:text-base">
-            Contra: <span className="text-analysis-blue font-bold">
-              {tipoPartida === 'local' ? guestName : botOponente?.nome}
-            </span>
-          </p>
+          <p className="mb-1 text-[11px] font-black uppercase tracking-[0.2em] text-analysis-blue">Nova partida</p>
+          <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">Ajuste a sua <span className="text-chess-green">partida</span></h1>
+          <p className="mt-1 text-sm text-slate-400">Você jogará contra <span className="font-semibold text-slate-200">{tipoPartida === 'local' ? guestName : botOponente?.nome}</span>.</p>
         </div>
-      </div>
+      </header>
 
-      <div className="flex-1 flex flex-col gap-10">
-        
-        {/* Componente para seleção da cor das peças */}
-        <section>
-          <h3 className="text-slate-400 font-semibold mb-4 text-center uppercase tracking-widest text-sm">
-            Com qual cor você joga?
-          </h3>
-          <ColorSelector 
-            selected={selectedColor} 
-            onSelect={setSelectedColor} 
-            isMultiplayer={isMultiplayer} 
-          />
-        </section>
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(17rem,.78fr)_minmax(0,1.22fr)]">
+        <aside className="surface-card rounded-3xl p-4 sm:p-5 lg:sticky lg:top-5">
+          <div className="mb-5 flex items-center gap-3 border-b border-slate-700/60 pb-4">
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-chess-green/12 text-chess-green"><Clock3 size={20} /></span>
+            <div><h2 className="font-extrabold text-slate-100">Seu setup</h2><p className="text-xs text-slate-400">Defina cor e recursos.</p></div>
+          </div>
+          <div className="space-y-5">
+            <section>
+              <h3 className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">Cor das peças</h3>
+              <ColorSelector selected={selectedColor} onSelect={setSelectedColor} />
+            </section>
+            <FeatureToggle
+              title="Barra de avaliação"
+              description="Exibe a leitura do motor ao vivo."
+              icon={<Clock3 size={18} />}
+              isActive={isEvalBarEnabled}
+              onToggle={() => setIsEvalBarEnabled(!isEvalBarEnabled)}
+            />
+          </div>
+        </aside>
 
-        {/* Componente para seleção do controle de tempo */}
-        <section className="flex flex-col">
-          <h3 className="text-slate-400 font-semibold mb-4 text-center uppercase tracking-widest text-sm flex items-center justify-center gap-2">
-            <Clock size={16} />
-            Controle de Tempo
-          </h3>
-
-          {/* Exibe o estado de carregamento, erro ou a grade de opções de tempo */}
+        <section className="surface-card rounded-3xl p-4 sm:p-5">
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div><h2 className="text-lg font-extrabold text-white">Controle de tempo</h2><p className="mt-1 text-sm text-slate-400">Escolha um ritmo para esta partida.</p></div>
+            {selectedTimeId && <span className="rounded-full bg-analysis-blue/12 px-3 py-1 text-xs font-bold text-analysis-blue">Selecionado</span>}
+          </div>
           {isLoading ? (
-            <div className="text-center text-slate-500 py-10 animate-pulse">Carregando relógios...</div>
+            <div className="grid min-h-72 place-items-center text-sm text-slate-400"><span className="animate-pulse">Carregando controles…</span></div>
           ) : errorMsg ? (
-            <div className="p-4 bg-red-900/50 border border-red-500 rounded text-red-200 text-center">{errorMsg}</div>
+            <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-center text-sm text-red-200">{errorMsg}</div>
           ) : (
-            <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {tempos.map((tempo) => {
-                const identificador = tempo.slug || tempo._id || tempo.id || '';
-                
-                return (
-                  <TimeCard 
-                    key={identificador} 
-                    time={tempo} 
-                    isSelected={selectedTimeId === identificador}
-                    onClick={() => setSelectedTimeId(identificador)}
-                  />
-                );
-              })}
+            <div className="grid gap-3">{timeGroups.map((group) => <TimeGroup key={group.title} {...group} selectedTimeId={selectedTimeId} onSelect={setSelectedTimeId} />)}</div>
+          )}
+          {!isLoading && !errorMsg && (
+            <div className="mt-5 border-t border-slate-700/60 pt-5">
+              <Button label={isCreatingMatch ? 'Preparando partida…' : 'Começar jogo'} size="lg" className="w-full" disabled={!selectedTimeId || isCreatingMatch} onClick={handleConfirmar} />
             </div>
           )}
         </section>
-
-        {/* NOVO: Componente de configuração da Barra de Avaliação (Toggle) */}
-        {!isLoading && !errorMsg && (
-          <section className="flex justify-center mt-2">
-            <div 
-              onClick={() => setIsEvalBarEnabled(!isEvalBarEnabled)}
-              className="flex items-center justify-between w-full max-w-md p-4 bg-slate-800/50 rounded-xl border border-slate-700/50 cursor-pointer hover:bg-slate-800 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div className={`p-2 rounded-lg ${isEvalBarEnabled ? 'bg-analysis-blue/20 text-analysis-blue' : 'bg-slate-700 text-slate-400'}`}>
-                  <Activity size={20} />
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-white font-medium">Barra de Avaliação</span>
-                  <span className="text-xs text-slate-400">Mostra a vantagem do motor em tempo real</span>
-                </div>
-              </div>
-              
-              {/* Switch Visual */}
-              <div className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 ${isEvalBarEnabled ? 'bg-analysis-blue' : 'bg-slate-600'}`}>
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${isEvalBarEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-              </div>
-            </div>
-          </section>
-        )}
-
       </div>
-
-      {/* Exibe mensagem de erro caso falhe a criação da partida após clicar em 'COMEÇAR JOGO' */}
-      {errorMsg && !isLoading && (
-        <div className="mb-4 p-3 bg-red-900/50 border border-red-500 rounded text-red-200 text-sm text-center">
-          {errorMsg}
-        </div>
-      )}
-
-      {/* Botão para iniciar a partida */}
-      {!isLoading && (
-        <div className="flex justify-center mt-8">
-          <Button 
-            label={isCreatingMatch ? 'GERANDO TABULEIRO...' : 'COMEÇAR JOGO'} 
-            size="lg" 
-            variant={selectedTimeId ? 'primary' : 'secondary'}
-            onClick={handleConfirmar}
-          />
-        </div>
-      )}
-
     </div>
   );
 }

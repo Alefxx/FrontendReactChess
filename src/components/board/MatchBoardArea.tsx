@@ -11,6 +11,7 @@ interface MatchBoardAreaProps {
   // Configurações
   isEvalBarEnabled: boolean;
   minhaCor: 'branca' | 'preta';
+  boardOrientation?: 'branca' | 'preta';
   
   // Estado do Jogo
   gameFen: string;
@@ -54,6 +55,7 @@ interface MatchBoardAreaProps {
 export function MatchBoardArea({
   isEvalBarEnabled,
   minhaCor,
+  boardOrientation,
   gameFen,
   isCheck,
   lastMove,
@@ -78,6 +80,7 @@ export function MatchBoardArea({
   moveCoordsHistory
 }: MatchBoardAreaProps) {
   const navigate = useNavigate();
+  const displayedColor = boardOrientation || minhaCor;
 
   // Função isolada aqui, pois é uma lógica puramente visual (UI) do tabuleiro
   const getCombinedStyles = () => {
@@ -86,11 +89,11 @@ export function MatchBoardArea({
     if (lastMove) {
       styles[lastMove.origem] = { 
         ...styles[lastMove.origem], 
-        backgroundColor: 'rgba(255, 255, 0, 0.4)' 
+        backgroundColor: 'rgba(250, 204, 21, 0.46)'
       };
       styles[lastMove.destino] = { 
         ...styles[lastMove.destino], 
-        backgroundColor: 'rgba(255, 255, 0, 0.4)' 
+        backgroundColor: 'rgba(250, 204, 21, 0.46)'
       };
     }
 
@@ -98,7 +101,7 @@ export function MatchBoardArea({
   };
 
   return (
-    <div className="w-full max-w-[640px] mx-auto relative mt-4 flex gap-2 md:gap-3 items-stretch">
+    <div className="relative mx-auto mt-2 flex w-full max-w-[680px] items-stretch gap-2 sm:gap-3">
       
       {/* Barra de Avaliação */}
       {isEvalBarEnabled && (
@@ -106,18 +109,18 @@ export function MatchBoardArea({
           <EvalBar 
             vantagemBrancas={vantagemBrancas} 
             isMate={isMate} 
-            isInvertida={minhaCor === 'preta'} 
+            isInvertida={displayedColor === 'preta'} 
           />
         </div>
       )}
 
       {/* Wrapper do Tabuleiro */}
-      <div className="flex-1 relative">
+      <div className="relative min-w-0 flex-1">
         <CheckAlert isCheck={isCheck} />
 
         <CustomChessboard 
           fen={gameFen} 
-          boardOrientation={minhaCor === 'branca' ? 'white' : 'black'}
+          boardOrientation={displayedColor === 'branca' ? 'white' : 'black'}
           onSquareClick={onSquareClick}
           customSquareStyles={getCombinedStyles()}
         />
