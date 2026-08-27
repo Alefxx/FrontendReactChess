@@ -1,80 +1,46 @@
-// src/features/gamemode/view/GameModeView.tsx
+import { Bot, ChevronRight, House, Users } from 'lucide-react';
+import { ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Logo } from '@/components/ui/Logo';
-import { Button } from '@/components/ui/Button';
 import { UserProfileWidget } from '@/components/ui/UserProfileWidget';
 import { useAuthStore } from '@/store/authStore';
+
+interface ModeCardProps {
+  title: string;
+  description: string;
+  icon: ReactNode;
+  accent: string;
+  onClick: () => void;
+}
+
+function ModeCard({ title, description, icon, accent, onClick }: ModeCardProps) {
+  return (
+    <button type="button" onClick={onClick} className="surface-interactive group flex w-full items-center gap-4 rounded-2xl p-4 text-left sm:p-5">
+      <span className={`grid h-12 w-12 shrink-0 place-items-center rounded-2xl ${accent}`}>{icon}</span>
+      <span className="min-w-0 flex-1"><span className="block text-base font-black text-white">{title}</span><span className="mt-1 block text-sm text-slate-400">{description}</span></span>
+      <ChevronRight size={20} className="shrink-0 text-slate-500 transition-transform group-hover:translate-x-1 group-hover:text-slate-200" />
+    </button>
+  );
+}
 
 export function GameModeView() {
   const navigate = useNavigate();
   const user = useAuthStore((state) => state.user);
-
-  const getIniciais = (nome?: string) => {
-    if (!nome) return '??';
-    return nome.substring(0, 2).toUpperCase();
-  };
+  const initials = (user?.nome || 'Jogador').slice(0, 2).toUpperCase();
 
   return (
-    <div className="w-full min-h-[80vh] flex flex-col">
-      
-      {/* Navegação Superior (Mesmo padrão da Dashboard) */}
-      <header className="flex justify-between items-center w-full mb-16">
-        <div className="cursor-pointer" onClick={() => navigate('/')}>
-          <Logo size="sm" />
-        </div>
-        
-        <UserProfileWidget 
-          nome={user?.nome || 'Jogador'}
-          rating={user?.rating || 1500}
-          iniciais={getIniciais(user?.nome)}
-          foto={user?.foto}
-          onClick={() => navigate('/profile')}
-        />
+    <div className="page-container flex min-h-[calc(100vh-2rem)] flex-col py-2 sm:min-h-[calc(100vh-3rem)] sm:py-3">
+      <header className="surface-subtle flex items-center justify-between rounded-2xl px-3 py-2.5 sm:px-4">
+        <button type="button" className="rounded-lg" onClick={() => navigate('/dashboard')} aria-label="Voltar ao início"><Logo size="sm" /></button>
+        <UserProfileWidget nome={user?.nome || 'Jogador'} rating={user?.rating || 1500} iniciais={initials} foto={user?.foto} onClick={() => navigate('/profile')} />
       </header>
-
-      {/* Conteúdo Principal */}
-      <main className="flex-1 flex flex-col items-center justify-center gap-10 w-full max-w-md mx-auto">
-        
-        {/* Título */}
-        <div className="text-center">
-          <h1 className="text-3xl md:text-5xl font-black text-white mb-4">
-            Modo de <span className="text-chess-green">Jogo</span>
-          </h1>
-          <p className="text-slate-400 text-sm md:text-base">
-            Escolha como você quer jogar a sua próxima partida.
-          </p>
+      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center py-8 sm:py-12">
+        <div className="mb-7 text-center"><p className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-analysis-blue">Nova partida</p><h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">Como você quer <span className="text-chess-green">jogar?</span></h1><p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-400">Escolha um formato. Depois você configura cor, relógio e recursos.</p></div>
+        <div className="space-y-3">
+          <ModeCard title="Contra bots" description="Treine contra uma IA no nível que preferir." icon={<Bot size={24} />} accent="bg-analysis-blue/12 text-analysis-blue" onClick={() => navigate('/bots')} />
+          <ModeCard title="Partida presencial" description="Jogue com outra pessoa no mesmo aparelho." icon={<Users size={24} />} accent="bg-violet-400/12 text-violet-300" onClick={() => navigate('/localview')} />
+          <ModeCard title="Multiplayer online" description="Em breve: encontre jogadores em tempo real." icon={<House size={24} />} accent="bg-slate-700/70 text-slate-300" onClick={() => undefined} />
         </div>
-
-        {/* Lista de Modos de Jogo */}
-        <div className="flex flex-col gap-4 w-full px-4">
-          <Button 
-            label="Jogar contra Bots" 
-            size="lg" 
-            variant="primary"
-            className="w-full py-5 text-xl"
-            onClick={() => navigate('/bots')} 
-          />
-          
-          <Button 
-            label="Partida Local" 
-            size="lg" 
-            variant="secondary"
-            className="w-full py-5 text-xl"
-            onClick={() => navigate('/localview')} 
-          />
-
-          <Button 
-            label="Multiplayer Online" 
-            size="lg" 
-            variant="secondary"
-            className="w-full py-5 text-xl"
-            onClick={() => {
-              // TODO: Redirecionar para o lobby/matchmaking quando existir
-              console.log('Modo Multiplayer selecionado');
-            }} 
-          />
-        </div>
-
       </main>
     </div>
   );

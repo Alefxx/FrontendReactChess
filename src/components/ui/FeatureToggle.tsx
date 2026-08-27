@@ -14,15 +14,15 @@ export function FeatureToggle({ title, description, icon, isActive, onToggle }: 
       role="switch"
       aria-checked={isActive}
       onClick={onToggle}
-      className="group flex items-center justify-between w-full p-4 bg-slate-900/80 rounded-2xl border-2 border-slate-800 cursor-pointer hover:border-slate-700 hover:bg-slate-800 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-analysis-blue"
+      className="surface-interactive group flex w-full items-center justify-between rounded-2xl p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-analysis-blue"
     >
-      <div className="flex items-center gap-4">
-        <div className={`p-2.5 rounded-xl transition-colors duration-300 ${isActive ? 'bg-analysis-blue/20 text-analysis-blue' : 'bg-slate-800 text-slate-400 group-hover:bg-slate-700 group-hover:text-slate-300'}`}>
+      <div className="flex items-center gap-3">
+        <div className={`rounded-xl p-2.5 transition-colors duration-300 ${isActive ? 'bg-analysis-blue/20 text-analysis-blue' : 'bg-slate-800 text-slate-400 group-hover:bg-slate-700 group-hover:text-slate-300'}`}>
           {icon}
         </div>
         <div className="flex flex-col text-left">
-          <span className={`font-bold transition-colors ${isActive ? 'text-white' : 'text-slate-300'}`}>{title}</span>
-          <span className="text-xs text-slate-500 font-medium">{description}</span>
+          <span className={`text-sm font-bold transition-colors ${isActive ? 'text-white' : 'text-slate-300'}`}>{title}</span>
+          <span className="text-xs font-medium text-slate-500">{description}</span>
         </div>
       </div>
       

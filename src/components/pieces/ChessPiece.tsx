@@ -35,7 +35,7 @@ export function ChessPiece({ char }: ChessPieceProps) {
       src={imageSrc}
       alt={`Peça de xadrez ${imageKey}`}
       draggable="false"
-      className="w-[85%] h-[85%] object-contain drop-shadow-[0_3px_3px_rgba(0,0,0,0.5)] z-10 select-none pointer-events-none"
+      className="z-10 h-[88%] w-[88%] select-none object-contain drop-shadow-[0_3px_2px_rgba(0,0,0,0.45)] pointer-events-none"
     />
   );
 }

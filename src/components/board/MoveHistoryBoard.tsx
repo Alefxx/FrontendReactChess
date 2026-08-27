@@ -15,6 +15,7 @@ interface MoveHistoryBoardProps {
   pgnHistory: string[]; 
   onProporEmpate?: () => void; // Marcado como opcional
   onAbandonar?: () => void;    // Marcado como opcional
+  abandonLabel?: string;
   currentMoveIndex?: number;   // Adicionado para a tela de análise
   onMoveClick?: (index: number) => void; // Adicionado para navegar na análise
   moveCodes?: number[];
@@ -24,6 +25,7 @@ export function MoveHistoryBoard({
   pgnHistory, 
   onProporEmpate, 
   onAbandonar,
+  abandonLabel = 'Abandonar',
   currentMoveIndex = -1,
   onMoveClick,
   moveCodes,
@@ -44,14 +46,14 @@ export function MoveHistoryBoard({
   const interactiveClass = onMoveClick ? "cursor-pointer hover:bg-slate-700/60" : "";
 
   return (
-    <div className="flex-1 bg-slate-800 rounded-xl border border-slate-700 p-4 flex flex-col min-h-[250px]">
-      <div className="flex items-center gap-2 mb-4 text-slate-400 font-bold uppercase text-xs tracking-widest border-b border-slate-700 pb-2">
+    <div className="surface-card flex min-h-[250px] flex-1 flex-col rounded-2xl p-4">
+      <div className="mb-4 flex items-center gap-2 border-b border-slate-700/70 pb-3 text-xs font-black uppercase tracking-[0.14em] text-slate-400">
         <Trophy size={14} />
         Histórico de Lances
       </div>
       
       {/* Lista de Movimentos */}
-      <div className="flex-1 overflow-y-auto text-sm font-mono grid grid-cols-[30px_1fr_1fr] gap-x-2 gap-y-1 content-start pr-2">
+      <div className="grid flex-1 grid-cols-[30px_1fr_1fr] content-start gap-x-2 gap-y-1 overflow-y-auto pr-2 font-mono text-sm">
         {turnos.map((turno) => {
           const isBrancasAtivo = currentMoveIndex === turno.indiceBrancas;
           const isPretasAtivo = currentMoveIndex === turno.indicePretas;
@@ -99,7 +101,7 @@ export function MoveHistoryBoard({
 
       {/* Ações da Partida (só renderiza se as funções existirem, ou seja, se estiver na partida ao vivo) */}
       {(onProporEmpate || onAbandonar) && (
-        <div className="mt-4 pt-4 border-t border-slate-700 grid grid-cols-2 gap-2">
+        <div className={`mt-4 grid gap-2 border-t border-slate-700/70 pt-4 ${onProporEmpate && onAbandonar ? 'grid-cols-2' : 'grid-cols-1'}`}>
            {onProporEmpate && (
              <Button 
                label="Empate" 
@@ -110,7 +112,7 @@ export function MoveHistoryBoard({
            )}
            {onAbandonar && (
              <Button 
-               label="Abandonar" 
+               label={abandonLabel}
                variant="danger" 
                size="sm" 
                onClick={onAbandonar}

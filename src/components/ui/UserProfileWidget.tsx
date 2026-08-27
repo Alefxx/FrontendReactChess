@@ -1,4 +1,4 @@
-// src/components/ui/UserProfileWidget.tsx
+import { Avatar } from './Avatar';
 
 interface UserProfileWidgetProps {
   nome: string;
@@ -12,23 +12,17 @@ export function UserProfileWidget({ nome, rating, iniciais, foto, onClick }: Use
   return (
     <div 
       onClick={onClick} 
-      className={`flex items-center gap-3 p-2 pr-4 rounded-full border transition-all
-        ${onClick ? 'cursor-pointer hover:bg-slate-800 border-transparent hover:border-slate-700' : 'border-transparent'}`}
+      className={`flex items-center gap-3 rounded-2xl border px-2 py-1.5 pr-3 transition-all
+        ${onClick ? 'cursor-pointer border-slate-700/50 bg-slate-900/35 hover:border-slate-600 hover:bg-slate-800/80' : 'border-transparent'}`}
     >
       {/* Informações de Texto (Escondidas em telas muito pequenas) */}
       <div className="text-right hidden sm:block">
-        <p className="text-sm font-bold text-white leading-tight">{nome}</p>
-        <p className="text-xs text-analysis-blue font-bold tracking-wider">{rating} ELO</p>
+        <p className="max-w-32 truncate text-sm font-bold text-white leading-tight">{nome}</p>
+        <p className="text-[11px] font-bold tracking-wider text-analysis-blue">{rating} ELO</p>
       </div>
       
       {/* Círculo do Avatar */}
-      <div className="w-10 h-10 rounded-full bg-slate-700 border-2 border-chess-green flex items-center justify-center overflow-hidden shadow-lg shrink-0">
-        {foto ? (
-          <img src={foto} alt={nome} className="w-full h-full object-cover" />
-        ) : (
-          <span className="text-slate-300 font-bold text-sm">{iniciais}</span>
-        )}
-      </div>
+      <Avatar name={nome} src={foto} initials={iniciais} className="h-10 w-10 shrink-0 border-2 border-chess-green shadow-lg shadow-lime-500/10" />
     </div>
   );
 }

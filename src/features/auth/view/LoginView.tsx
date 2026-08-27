@@ -64,19 +64,20 @@ export function LoginView() {
   };
 
   return (
-    <div className="w-full flex flex-col items-center">
+    <div className="flex min-h-[calc(100vh-2rem)] w-full flex-col items-center justify-center py-6 sm:min-h-[calc(100vh-3rem)]">
       {/* Branding e Identidade Visual */}
-      <header className="mb-8 flex flex-col items-center text-center">
+      <header className="mb-7 flex flex-col items-center text-center">
         <Logo size="lg" />
         <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.4em] mt-3">
-          Grandmaster Analysis Engine
+          Xadrez, treino e análise
         </p>
       </header>
 
       <Card>
-        <h2 className="text-xl md:text-2xl font-bold mb-6 text-white text-center">
-          Acesso ao Sistema
+        <h2 className="mb-2 text-center text-xl font-black text-white md:text-2xl">
+          Bem-vindo de volta
         </h2>
+        <p className="mb-6 text-center text-sm text-slate-400">Entre para continuar sua evolução no tabuleiro.</p>
         
         {/* Feedback visual de erro com animação de alerta */}
         {errorMsg && (
@@ -86,7 +87,7 @@ export function LoginView() {
         )}
 
         {/* Formulário de entrada de dados */}
-        <div className="flex flex-col gap-4 mb-8">
+        <div className="mb-7 flex flex-col gap-4">
           <Input 
             label="Nome de Usuário" 
             value={username} 
