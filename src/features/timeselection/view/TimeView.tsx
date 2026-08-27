@@ -1,4 +1,5 @@
-import { ArrowLeft, Clock3, Flame, Hourglass, Timer, Zap } from 'lucide-react';
+import { useRef } from 'react';
+import { ArrowLeft, CheckCircle2, Clock3, Flame, Hourglass, Timer, Zap } from 'lucide-react';
 import { IconButton } from '@/components/ui/IconButton';
 import { Button } from '@/components/ui/Button';
 import { ColorSelector } from '@/components/ui/ColorSelector';
@@ -7,6 +8,7 @@ import { TimeGroup } from '@/components/ui/TimeGroup';
 import { useTime } from '../hooks/useTime';
 
 export function TimeView() {
+  const playAreaRef = useRef<HTMLDivElement>(null);
   const {
     tempos, isLoading, isCreatingMatch, errorMsg, selectedColor, setSelectedColor,
     selectedTimeId, setSelectedTimeId, botOponente, tipoPartida, guestName,
@@ -19,6 +21,20 @@ export function TimeView() {
     { title: 'Rápida', description: 'Equilíbrio para pensar', icon: <Timer size={18} />, accentClass: 'bg-lime-400/12 text-chess-green', list: tempos.filter((time) => time.minutos > 5 && time.minutos <= 15) },
     { title: 'Clássica', description: 'Partidas sem pressa', icon: <Hourglass size={18} />, accentClass: 'bg-sky-400/12 text-analysis-blue', list: tempos.filter((time) => time.minutos > 15) },
   ];
+
+  const guideToPlay = () => requestAnimationFrame(() => {
+    playAreaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+
+  const handleTimeSelect = (id: string) => {
+    setSelectedTimeId(id);
+    guideToPlay();
+  };
+
+  const handleColorSelect = (color: Parameters<typeof setSelectedColor>[0]) => {
+    setSelectedColor(color);
+    if (selectedTimeId) guideToPlay();
+  };
 
   return (
     <div className="page-container max-w-6xl py-2 sm:py-5">
@@ -40,7 +56,7 @@ export function TimeView() {
           <div className="space-y-5">
             <section>
               <h3 className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">Cor das peças</h3>
-              <ColorSelector selected={selectedColor} onSelect={setSelectedColor} />
+              <ColorSelector selected={selectedColor} onSelect={handleColorSelect} />
             </section>
             <FeatureToggle
               title="Barra de avaliação"
@@ -62,11 +78,16 @@ export function TimeView() {
           ) : errorMsg ? (
             <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-center text-sm text-red-200">{errorMsg}</div>
           ) : (
-            <div className="grid gap-3">{timeGroups.map((group) => <TimeGroup key={group.title} {...group} selectedTimeId={selectedTimeId} onSelect={setSelectedTimeId} />)}</div>
+            <div className="grid gap-3 lg:grid-cols-2">{timeGroups.map((group) => <TimeGroup key={group.title} {...group} selectedTimeId={selectedTimeId} onSelect={handleTimeSelect} />)}</div>
           )}
           {!isLoading && !errorMsg && (
-            <div className="mt-5 border-t border-slate-700/60 pt-5">
-              <Button label={isCreatingMatch ? 'Preparando partida…' : 'Começar jogo'} size="lg" className="w-full" disabled={!selectedTimeId || isCreatingMatch} onClick={handleConfirmar} />
+            <div ref={playAreaRef} className="mt-5 scroll-mt-4 border-t border-slate-700/60 pt-5">
+              {selectedTimeId && (
+                <p className="mb-3 flex items-center justify-center gap-2 text-sm font-bold text-chess-green" aria-live="polite">
+                  <CheckCircle2 size={17} /> Tudo pronto para jogar
+                </p>
+              )}
+              <Button label={isCreatingMatch ? 'Preparando partida…' : 'Jogar agora'} size="lg" className="w-full" disabled={!selectedTimeId || isCreatingMatch} onClick={handleConfirmar} />
             </div>
           )}
         </section>

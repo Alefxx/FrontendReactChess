@@ -29,6 +29,7 @@ export function MatchGameView({ mode }: MatchGameViewProps) {
   const [localOrientation, setLocalOrientation] = useState<PieceColor>('branca');
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     const invalidMatch = !partidaData || !currentUser || (isLocal && partidaData.tipoPartida !== 'local');
     if (invalidMatch) navigate('/dashboard', { replace: true });
   }, [partidaData, currentUser, navigate, isLocal]);
@@ -70,7 +71,7 @@ export function MatchGameView({ mode }: MatchGameViewProps) {
       </header>
 
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_19rem] xl:gap-5">
-        <main className="mx-auto flex w-full max-w-[730px] flex-col gap-2.5 sm:gap-3">
+        <main className="match-game-column mx-auto flex flex-col gap-2.5 sm:gap-3">
           <PlayerPanel
             nome={topName}
             rating={topRating}

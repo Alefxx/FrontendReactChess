@@ -101,7 +101,7 @@ export function MatchBoardArea({
   };
 
   return (
-    <div className="relative mx-auto mt-2 flex w-full max-w-[680px] items-stretch gap-2 sm:gap-3">
+    <div className="relative mx-auto mt-1 flex w-full items-stretch gap-2 sm:gap-3">
       
       {/* Barra de Avaliação */}
       {isEvalBarEnabled && (

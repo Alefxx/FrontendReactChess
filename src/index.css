@@ -70,6 +70,16 @@ button:focus-visible, input:focus-visible {
 
 .board-square { -webkit-tap-highlight-color: transparent; }
 
+.match-game-column {
+  width: min(100%, 680px, max(16rem, calc(100dvh - 18rem)));
+}
+
+@media (min-width: 1280px) {
+  .match-game-column {
+    width: min(100%, 800px, max(20rem, calc(100dvh - 16rem)));
+  }
+}
+
 @media (max-width: 640px) {
   .board-frame { border-width: 4px; border-radius: 0.7rem; }
 }

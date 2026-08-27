@@ -1,4 +1,4 @@
-import { Clock3 } from 'lucide-react';
+import { CheckCircle2, Clock3 } from 'lucide-react';
 import { TimeOption } from '@/features/timeselection/service/time.service';
 
 interface TimeCardProps {
@@ -15,10 +15,11 @@ export function TimeCard({ time, isSelected, onClick }: TimeCardProps) {
       type="button"
       onClick={onClick}
       aria-pressed={isSelected}
-      className={`surface-interactive flex min-h-24 flex-col justify-between rounded-xl p-3 text-left active:scale-[0.98] ${
-        isSelected ? 'border-analysis-blue bg-sky-400/10 shadow-[0_8px_22px_rgba(56,189,248,0.13)]' : ''
+      className={`surface-interactive relative flex min-h-24 flex-col justify-between rounded-xl p-3 text-left active:scale-[0.98] ${
+        isSelected ? 'border-analysis-blue bg-sky-400/15 ring-2 ring-analysis-blue/45 shadow-[0_8px_22px_rgba(56,189,248,0.16)]' : ''
       }`}
     >
+      {isSelected && <CheckCircle2 aria-hidden="true" className="absolute right-2.5 top-2.5 text-analysis-blue" size={18} />}
       <span className={`grid h-7 w-7 place-items-center rounded-lg ${isSelected ? 'bg-analysis-blue text-slate-950' : 'bg-slate-800 text-slate-400'}`}>
         <Clock3 size={15} />
       </span>
