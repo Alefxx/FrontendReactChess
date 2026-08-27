@@ -14,30 +14,54 @@ class OpeningService {
   // FEN base da posição inicial
   private readonly START_FEN_BASE = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
 
+  // Arquivos a serem carregados
+  private readonly OPENING_FILES = [
+    '/data/ecoA.json',
+    '/data/ecoB.json'
+    // Você pode facilmente adicionar ecoC, ecoD, ecoE aqui depois
+  ];
+
   // Deve ser chamado apenas uma vez, idealmente quando o componente de análise montar
   async loadOpenings(): Promise<void> {
     if (this.dictionary) return;
     if (this.loadingPromise) return this.loadingPromise;
 
     this.loadingPromise = (async () => {
-      const response = await fetch('/data/ecoA.json');
-      if (!response.ok) {
-        throw new Error(`Não foi possível carregar o livro de aberturas (${response.status}).`);
+      // Dispara o fetch para todos os arquivos simultaneamente
+      const responses = await Promise.all(
+        this.OPENING_FILES.map(file => fetch(file))
+      );
+
+      // Verifica se houve erro em algum dos arquivos
+      for (const [index, response] of responses.entries()) {
+        if (!response.ok) {
+          throw new Error(`Não foi possível carregar o livro de aberturas ${this.OPENING_FILES[index]} (${response.status}).`);
+        }
       }
 
-      const dictionary = await response.json() as Record<string, ChessOpening>;
+      // Converte todos os arquivos para JSON simultaneamente
+      const dictionaries = await Promise.all(
+        responses.map(res => res.json() as Promise<Record<string, ChessOpening>>)
+      );
+
+      const mergedDictionary: Record<string, ChessOpening> = {};
       const dictionaryByPosition = new Map<string, ChessOpening>();
 
-      Object.entries(dictionary).forEach(([fen, opening]) => {
-        dictionaryByPosition.set(this.normalizeFen(fen), opening);
+      // Faz o merge (mesclagem) de todos os dicionários carregados
+      dictionaries.forEach(dict => {
+        Object.assign(mergedDictionary, dict);
+        
+        Object.entries(dict).forEach(([fen, opening]) => {
+          dictionaryByPosition.set(this.normalizeFen(fen), opening);
+        });
       });
 
-      this.dictionary = dictionary;
+      this.dictionary = mergedDictionary;
       this.dictionaryByPosition = dictionaryByPosition;
-      console.info(`[OpeningService] ${dictionaryByPosition.size} posições de abertura carregadas.`);
+      console.info(`[OpeningService] ${dictionaryByPosition.size} posições de abertura carregadas a partir de ${this.OPENING_FILES.length} arquivos.`);
     })().catch((error) => {
       this.loadingPromise = null;
-      console.error('[OpeningService] Erro ao carregar o livro de aberturas:', error);
+      console.error('[OpeningService] Erro ao carregar os livros de abertura:', error);
       throw error;
     });
 
