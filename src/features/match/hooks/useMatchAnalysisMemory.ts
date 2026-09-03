@@ -1,5 +1,5 @@
 // src/features/match/hooks/useMatchAnalysisMemory.ts
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import { matchService } from '@/features/match/service/match.service';
 
 interface UseMatchAnalysisMemoryProps {
@@ -13,6 +13,7 @@ interface UseMatchAnalysisMemoryProps {
  * e processar as estatísticas de avaliações (Engine) geradas no cliente.
  */
 export function useMatchAnalysisMemory({ partidaId, fenInicial, minhaCor }: UseMatchAnalysisMemoryProps) {
+  const persistenceQueue = useRef(Promise.resolve());
   
   // 1. RAM: Acumulador de avaliações geradas pelo motor no cliente
   const [avaliacoesLocais, setAvaliacoesLocais] = useState<number[]>([]);
@@ -45,7 +46,7 @@ export function useMatchAnalysisMemory({ partidaId, fenInicial, minhaCor }: UseM
    * Registra a nota do lance na memória RAM e tenta persistir no backend.
    * Como o service foi refatorado para lançar erros (throw), usamos try/catch aqui.
    */
-  const registrarAvaliacaoLocal = useCallback(async (codigo: number, id: number) => {
+  const registrarAvaliacaoLocal = useCallback((codigo: number, id: number) => {
     setAvaliacoesLocais((prev) => {
       const novoArray = [...prev];
       novoArray[id - 1] = codigo; // Index 0 para lance 1, Index 1 para lance 2...
@@ -53,12 +54,12 @@ export function useMatchAnalysisMemory({ partidaId, fenInicial, minhaCor }: UseM
     });
 
     if (partidaId) {
-      try {
-        await matchService.registrarAvaliacao(partidaId, { codigo });
-      } catch (error) {
-        // Apenas logamos, pois a avaliação visual (RAM) é o que importa para a UX imediata
-        console.error("[Analysis Memory] Falha ao salvar avaliação no banco:", error);
-      }
+      persistenceQueue.current = persistenceQueue.current
+        .then(() => matchService.registrarAvaliacao(partidaId, { codigo }))
+        .then(() => undefined)
+        .catch((error: unknown) => {
+          console.error('[Analysis Memory] Falha ao salvar avaliação no banco:', error);
+        });
     }
   }, [partidaId]);
 

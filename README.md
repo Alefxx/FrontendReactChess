@@ -1,5 +1,15 @@
 # React + TypeScript + Vite
 
+## Motor de análise
+
+O frontend usa **Stockfish 18 Lite WASM single-thread**, distribuído pelo projeto
+[stockfish.js](https://github.com/nmrugg/stockfish.js/releases/tag/v18.0.0) sob GPLv3.
+Os arquivos do motor ficam em `public/stockfish-18-lite-single.{js,wasm}`.
+
+O perfil de análise usa um único worker sob demanda, Hash de 16 MB, MultiPV 1 e busca
+limitada a depth 15 / 120 mil nós. O worker é interrompido quando uma posição é
+substituída e encerrado após 30 segundos ocioso.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 Currently, two official plugins are available:

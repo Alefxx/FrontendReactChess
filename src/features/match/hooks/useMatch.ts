@@ -39,7 +39,7 @@ export function useMatch(partidaData: any, currentUser: any, botOponente?: Bot, 
     erroAnalise,
     iniciarAvaliacaoFimDeJogo, 
     pararAvaliacao 
-  } = useMoveClassification(memory.fenHistory, isEvalBarEnabled, memory.registrarAvaliacaoLocal);
+  } = useMoveClassification(memory.fenHistory, memory.registrarAvaliacaoLocal);
 
   const processarRespostaServidor = (response: any, moveRealizado?: { origem: string; destino: string }) => {
     clock.atualizarTempos(response.tempos);
@@ -59,7 +59,6 @@ export function useMatch(partidaData: any, currentUser: any, botOponente?: Bot, 
     partidaId: partidaData?.partidaId,
     gameFen: board.gameFen,
     isMinhaVez: board.isMinhaVez,
-    minhaCor: board.minhaCor,
     isGameOver: !!rules.gameOver,
     isPendingPromotion: !!rules.pendingPromotion,
     botOponente,
@@ -71,7 +70,6 @@ export function useMatch(partidaData: any, currentUser: any, botOponente?: Bot, 
       board.setPieceSquare('');
       board.setMoveSquares({});
 
-      // ATUALIZAÇÃO: Não enviamos mais a corDoTurnoAtual (Segurança do Backend garantida)
       const payload: any = { origem, destino };
       if (pecaPromocao) payload.promocao = pecaPromocao;
 

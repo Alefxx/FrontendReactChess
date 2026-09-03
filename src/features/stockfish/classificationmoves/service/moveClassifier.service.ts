@@ -1,5 +1,5 @@
 // src/features/stockfish/classificationmoves/service/moveClassifier.service.ts
-import { AnalisePosicao } from '../../analysis/service/analysis.service';
+import type { AnalisePosicao } from '../../analysis/utils/evaluation.utils';
 
 export class MoveClassifierService {
   /**
@@ -49,27 +49,22 @@ export class MoveClassifierService {
     evalAtual: AnalisePosicao,
     corQueJogou: 'w' | 'b'
   ): number {
-    const isBrancas = corQueJogou === 'w';
+    const sinalJogador = corQueJogou === 'w' ? 1 : -1;
+    const mateAnteriorFavoravel = evalAnterior.tipo === 'mate'
+      && evalAnterior.vantagemBrancas * sinalJogador > 0;
+    const mateAtualFavoravel = evalAtual.tipo === 'mate'
+      && evalAtual.vantagemBrancas * sinalJogador > 0;
 
-    // 1. Alguém tomou mate na posição atual (ou permitiu mate forçado do oponente)
-    if (evalAtual.tipo === 'mate') {
-      const tomandoMate = isBrancas ? evalAtual.vantagemBrancas < 0 : evalAtual.vantagemBrancas > 0;
-      if (tomandoMate) return 5; // Capivara!
-    }
-
-    // 2. Alguém acabou de dar um xeque-mate (ou achou um mate forçado novo)
-    if (evalAnterior.tipo === 'cp' && evalAtual.tipo === 'mate') {
-      const dandoMate = isBrancas ? evalAtual.vantagemBrancas > 0 : evalAtual.vantagemBrancas < 0;
-      if (dandoMate) return 1; // Excelente!
-    }
-
-    // 3. Tinha um mate a favor, mas deixou escapar (voltou a ser CP)
     if (evalAnterior.tipo === 'mate' && evalAtual.tipo === 'cp') {
-      const tinhaMate = isBrancas ? evalAnterior.vantagemBrancas > 0 : evalAnterior.vantagemBrancas < 0;
-      if (tinhaMate) return 4; // Erro grave (perdeu a sequência de mate)
+      return mateAnteriorFavoravel ? 4 : 1;
     }
 
-    // 4. Se o mate forçado já existia e o jogador manteve a sequência, é um lance bom
-    return 2; 
+    if (evalAnterior.tipo === 'mate' && evalAtual.tipo === 'mate') {
+      if (mateAnteriorFavoravel && !mateAtualFavoravel) return 5;
+      if (!mateAnteriorFavoravel && mateAtualFavoravel) return 1;
+      return 2;
+    }
+
+    return mateAtualFavoravel ? 1 : 5;
   }
 }

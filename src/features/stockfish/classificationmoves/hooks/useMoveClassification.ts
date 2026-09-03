@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { analysisService, AnalisePosicao } from '../../analysis/service/analysis.service';
+import { analysisService } from '../../analysis/service/analysis.service';
+import type { AnalisePosicao } from '../../analysis/utils/evaluation.utils';
+import { isStockfishCancellation } from '../../engine.service';
 import { MoveClassifierService } from '../service/moveClassifier.service';
 import { openingService } from '../../analysis/service/opening.service';
 
@@ -7,12 +9,12 @@ const NEUTRAL_ANALYSIS: AnalisePosicao = {
   vantagemBrancas: 0,
   tipo: 'cp',
   valorOriginal: 0,
+  profundidade: 0,
 };
 
 /** Analisa a fita da partida somente quando o jogador solicita o relatório final. */
 export function useMoveClassification(
   historicoRealFens: string[],
-  _isEvalBarEnabled: boolean,
   onAvaliacaoPronta: (codigo: number, id: number) => void,
 ) {
   const [progressoFila, setProgressoFila] = useState({ avaliados: 0, total: 0 });
@@ -46,56 +48,63 @@ export function useMoveClassification(
     setErroAnalise(null);
 
     try {
-      await openingService.loadOpenings();
-    } catch {
-      console.warn('[MoveClassification] Livro indisponível; avaliando todos os lances no motor.');
-    }
-
-    while (!isPausado.current && !isDesmontado.current && indiceAtual.current < historicoRef.current.length) {
-      const index = indiceAtual.current;
-      const fenAtual = historicoRef.current[index];
-
       try {
-        const isBookPosition = openingService.isStartPosition(fenAtual) || Boolean(openingService.getOpening(fenAtual));
-        const analiseAtual = isBookPosition
-          ? NEUTRAL_ANALYSIS
-          : await analysisService.avaliarFenSincrono(fenAtual, 15);
+        await openingService.loadOpenings();
+      } catch {
+        console.warn('[MoveClassification] Livro indisponível; avaliando todos os lances no motor.');
+      }
 
-        if (isPausado.current || isDesmontado.current) break;
+      while (!isPausado.current && !isDesmontado.current && indiceAtual.current < historicoRef.current.length) {
+        const index = indiceAtual.current;
+        const fenAtual = historicoRef.current[index];
 
-        avaliacoes.current[index] = analiseAtual;
+        try {
+          const isBookPosition = openingService.isStartPosition(fenAtual) || Boolean(openingService.getOpening(fenAtual));
+          const analiseAtual = isBookPosition
+            ? NEUTRAL_ANALYSIS
+            : await analysisService.avaliarFenSincrono(fenAtual);
 
-        if (index > 0) {
-          const codigo = isBookPosition
-            ? 0
-            : MoveClassifierService.classificar(
-                avaliacoes.current[index - 1] ?? NEUTRAL_ANALYSIS,
-                analiseAtual,
-                fenAtual.split(' ')[1] === 'b' ? 'w' : 'b',
-              );
-          onAvaliacaoPronta(codigo, index);
-        }
-      } catch (error) {
-        // Uma posição inválida ou falha do worker não pode deixar o modal em progresso infinito.
-        console.error('[MoveClassification] Erro ao avaliar posição:', error);
-        avaliacoes.current[index] = NEUTRAL_ANALYSIS;
-        setErroAnalise('Algumas posições não puderam ser calculadas pelo motor.');
-      } finally {
-        // Sempre contabilize o item atual, inclusive em caso de erro.
-        if (!isPausado.current && !isDesmontado.current) {
-          indiceAtual.current = index + 1;
-          setProgressoFila({ avaliados: index + 1, total: historicoRef.current.length });
+          if (isPausado.current || isDesmontado.current) break;
+
+          avaliacoes.current[index] = analiseAtual;
+
+          if (index > 0) {
+            const codigo = isBookPosition
+              ? 0
+              : MoveClassifierService.classificar(
+                  avaliacoes.current[index - 1] ?? NEUTRAL_ANALYSIS,
+                  analiseAtual,
+                  fenAtual.split(' ')[1] === 'b' ? 'w' : 'b',
+                );
+            onAvaliacaoPronta(codigo, index);
+          }
+        } catch (error) {
+          if (isStockfishCancellation(error) || isPausado.current || isDesmontado.current) break;
+          console.error('[MoveClassification] Erro ao avaliar posição:', error);
+          avaliacoes.current[index] = NEUTRAL_ANALYSIS;
+          setErroAnalise('Algumas posições não puderam ser calculadas pelo motor.');
+        } finally {
+          if (!isPausado.current && !isDesmontado.current) {
+            indiceAtual.current = index + 1;
+            setProgressoFila({
+              avaliados: Math.min(index, historicoRef.current.length - 1),
+              total: Math.max(0, historicoRef.current.length - 1),
+            });
+          }
         }
       }
+    } finally {
+      isProcessando.current = false;
     }
-
-    isProcessando.current = false;
   }, [onAvaliacaoPronta]);
 
   const iniciarAvaliacaoFimDeJogo = useCallback(() => {
     if (isDesmontado.current) return;
     isPausado.current = false;
-    setProgressoFila({ avaliados: indiceAtual.current, total: historicoRef.current.length });
+    setProgressoFila({
+      avaliados: Math.max(0, indiceAtual.current - 1),
+      total: Math.max(0, historicoRef.current.length - 1),
+    });
     void processarFilaBackground();
   }, [processarFilaBackground]);
 
@@ -105,7 +114,7 @@ export function useMoveClassification(
   }, []);
 
   return {
-    progressoFila: { ...progressoFila, total: historicoRealFens.length },
+    progressoFila: { ...progressoFila, total: Math.max(0, historicoRealFens.length - 1) },
     erroAnalise,
     iniciarAvaliacaoFimDeJogo,
     pararAvaliacao,

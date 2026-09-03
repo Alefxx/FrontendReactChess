@@ -11,8 +11,7 @@ class OpeningService {
   private dictionary: Record<string, ChessOpening> | null = null;
   private dictionaryByPosition: Map<string, ChessOpening> | null = null;
   private loadingPromise: Promise<void> | null = null;
-  // FEN base da posição inicial
-  private readonly START_FEN_BASE = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR";
+  private readonly START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
   // Arquivos a serem carregados
   private readonly OPENING_FILES = [
@@ -80,7 +79,7 @@ class OpeningService {
   }
 
   isStartPosition(fen: string): boolean {
-    return fen.startsWith(this.START_FEN_BASE);
+    return fen === 'start' || fen.trim() === this.START_FEN;
   }
 
   private normalizeFen(fen: string): string {

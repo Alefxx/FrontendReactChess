@@ -59,9 +59,6 @@ export function MatchAnalysis() {
   const vantagemBrancas = evalData?.vantagemBrancas || 0;
   const isMate = evalData?.tipo === 'mate';
 
-  if (!partidaData || !currentUser) return null;
-
-  // ATUALIZAÇÃO: Prevenindo o bug do Falsy (0)
   const currentQualityCode = currentMoveIndex > 0 ? avaliacoesLocais[currentMoveIndex - 1] : null;
   const currentQuality = (currentQualityCode !== null && currentQualityCode !== undefined) 
     ? QUALITY_MAP[currentQualityCode] 
@@ -84,6 +81,8 @@ export function MatchAnalysis() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [prevMove, nextMove]);
+
+  if (!partidaData || !currentUser) return null;
 
   return (
     <div className="page-container grid max-w-7xl items-start gap-4 py-1 sm:py-3 xl:grid-cols-[minmax(0,1fr)_19rem] xl:gap-5">

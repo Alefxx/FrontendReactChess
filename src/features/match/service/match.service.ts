@@ -25,7 +25,6 @@ export interface MatchResponse {
 export interface MovePayload {
   origem: string;  
   destino: string; 
-  corDoTurnoAtual?: 'branca' | 'preta'; // Tornamos opcional pois o Backend não usa mais por segurança
   historicoCapturas?: string[];
   promocao?: string; 
 }
