@@ -62,9 +62,6 @@ export function BotView() {
           <h1 className="text-2xl font-black leading-tight text-white md:text-3xl">
             Escolha seu <span className="text-chess-green">oponente</span>
           </h1>
-          <p className="mt-1 text-sm text-slate-400 md:text-base">
-            Selecione uma Inteligência Artificial para desafiar.
-          </p>
         </div>
       </div>
 

@@ -35,7 +35,7 @@ export function GameModeView() {
         <UserProfileWidget nome={user?.nome || 'Jogador'} rating={user?.rating || 1500} iniciais={initials} foto={user?.foto} onClick={() => navigate('/profile')} />
       </header>
       <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center py-8 sm:py-12">
-        <div className="mb-7 text-center"><p className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-analysis-blue">Nova partida</p><h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">Como você quer <span className="text-chess-green">jogar?</span></h1><p className="mx-auto mt-3 max-w-md text-sm leading-6 text-slate-400">Escolha um formato. Depois você configura cor, relógio e recursos.</p></div>
+        <div className="mb-7 text-center"><h1 className="text-3xl font-black tracking-tight text-white sm:text-4xl">Como você quer <span className="text-chess-green">jogar?</span></h1></div>
         <div className="space-y-3">
           <ModeCard title="Contra bots" description="Treine contra uma IA no nível que preferir." icon={<Bot size={24} />} accent="bg-analysis-blue/12 text-analysis-blue" onClick={() => navigate('/bots')} />
           <ModeCard title="Partida presencial" description="Jogue com outra pessoa no mesmo aparelho." icon={<Users size={24} />} accent="bg-violet-400/12 text-violet-300" onClick={() => navigate('/localview')} />
