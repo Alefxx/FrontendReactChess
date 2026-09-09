@@ -1,5 +1,4 @@
-// src/features/auth/view/LoginView.tsx
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -92,7 +91,7 @@ export function LoginView() {
             label="Nome de Usuário" 
             value={username} 
             onChange={setUsername} 
-            placeholder="Seu usuário (ex: thayna_dev)"
+            placeholder="Seu usuário"
           />
           <Input 
             label="Senha" 

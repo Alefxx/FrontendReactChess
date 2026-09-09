@@ -110,8 +110,8 @@ export function RegisterView() {
         {/* Coleção de inputs para captação de dados do perfil */}
         <p className="mb-6 text-center text-sm text-slate-400">Configure o seu perfil e comece a jogar.</p>
         <div className="mb-7 flex flex-col gap-4">
-          <Input label="Nome Completo" value={nome} onChange={setNome} placeholder="Ex: Thayná Silva" />
-          <Input label="Nome de Usuário (Username)" value={username} onChange={setUsername} placeholder="Ex: thayna_dev" />
+          <Input label="Nome Completo" value={nome} onChange={setNome} placeholder ="Nome completo" />
+          <Input label="Nome de Usuário" value={username} onChange={setUsername} placeholder="Usuario para login" />
           <Input label="Senha" type="password" value={senha} onChange={setSenha} placeholder="Crie uma senha forte" />
           <Input label="Confirmar Senha" type="password" value={confirmSenha} onChange={setConfirmSenha} placeholder="Repita a senha" />
         </div>
